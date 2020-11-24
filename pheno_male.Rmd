@@ -1,0 +1,104 @@
+---
+title: "Phenological traits of Rodents in Portal, AZ (male)"
+author: "Pat Dumandan"
+date: "11/23/2020"
+output: html_document
+---
+
+#### Exclosure set-up
+```{r, message=FALSE}
+library(dplyr)
+Portal_rodent=read.csv("./PortalData/Rodents/Portal_rodent.csv")
+Portal_plots=read.csv("./PortalData/SiteandMethods/Portal_plots.csv")
+portal1=inner_join(Portal_rodent, Portal_plots, by= c("plot", "month", "year"))
+```
+
+```{r}
+target_sp=c("PB", "PP", "PE", "PF", "PM", "RM")
+target_repro=c("S", "M", "R")
+target_month=c(1:12)
+total_ex=portal1%>%
+  filter(species %in% target_sp, testes %in% target_repro,
+         treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species, testes)
+write.csv(total_ex, "male_exclosure_SMR.csv")
+```
+*if only S in exclosure=1838 (vs 3008 if including M and R)*
+
+##### Control set-up
+```{r}
+total_con=portal1%>%
+  filter(species %in% target_sp, testes %in% target_repro,
+         treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species, testes)
+write.csv(total_con, "male_control_SMR.csv")
+```
+*if only S in control=1333 (vs 2320 if including M and R)*
+
+## Proportion of counts per month per species
+```{r}
+#control with scrotal only
+
+#sp1: PB
+count_per_month_PBcon= c(4,17,34,19,12,9,7,4,2,5,2,4)
+count_per_month_PBex= c(6,14,47,46,34,22,27,10,11,14,3,7)
+PBprop=vector(mode="integer", length=length(count_per_month_PBcon))
+PBpropex=vector(mode="integer", length=length(count_per_month_PBex))
+
+for (i in 1:length(count_per_month_PBex)) {
+  proportions=count_per_month_PBex[i]/sum(count_per_month_PBex)
+  PBpropex[i]=proportions
+}
+PBpropex
+
+for (i in 1:length(count_per_month_PBcon)) {
+  proportions=count_per_month_PBcon[i]/sum(count_per_month_PBcon)
+  PBprop[i]=proportions
+}
+
+PBprop
+
+```
+
+```{r}
+# control with S,M,R 
+PBcon=portal1%>%
+  filter(species=="PB", testes %in% target_repro,
+         treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species, testes)
+
+PBex=portal1%>%
+  filter(species=="PB", testes %in% target_repro,
+         treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species, testes)
+
+count_per_month_PBcon_smr= c(27,58,95,49,49,35,27,20,21,17,26,21)
+count_per_month_PBex_smr= c(43,66,136,95,95,79,73,48,57,47,40,30)
+PBprop_smr=vector(mode="integer", length=length(count_per_month_PBcon_smr))
+PBpropex_smr=vector(mode="integer", length=length(count_per_month_PBex_smr))
+
+for (i in 1:length(count_per_month_PBcon_smr)) {
+  proportions=count_per_month_PBcon_smr[i]/sum(count_per_month_PBcon_smr)
+  PBprop_smr[i]=proportions
+}
+PBprop_smr
+
+for (i in 1:length(count_per_month_PBex_smr)) {
+  proportions=count_per_month_PBex_smr[i]/sum(count_per_month_PBex_smr)
+  PBpropex_smr[i]=proportions
+}
+PBpropex_smr
+```
+*PBcontrol=around 69% of the total "events" occurred in the months of FEB-MAY (~ >10%/month proportions)* 
+
+*PBexclosure=around 72% of the total "events" occurred in the months of MAR-MAY (~ >10%/month proportions)*   
+
+*PB exclosure with all events(SMR), bulk of these events (51%) occurred in MAR-JUN (~ >10%/month proportions)*    
+
+*PB control with all events(SMR), bulk of these events (56%) occurred in FEB-MAY (~ >10%/month proportions)*   
+
+*Qualitatively, it seems that for PBs, the reproductive events (across all years) tend to occur earlier in the control set-ups (Feb-May)*  
+
+### CALCULATE PROPORTION OF EVENTS OCCURRING PER MONTH PER YEAR
+#### **to ask Morgan:**   
+* is it worth it to add M and R given these counts?  
