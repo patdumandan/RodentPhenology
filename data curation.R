@@ -1,3 +1,10 @@
+library(dplyr)
+library(tidyr)
+
+Portal_rodent=read.csv("./PortalData/Rodents/Portal_rodent.csv")
+Portal_plots=read.csv("./PortalData/SiteandMethods/Portal_plots.csv")
+portal1=inner_join(Portal_rodent, Portal_plots, by= c("plot", "month", "year"))
+
 #size thresholds####
 PB=portal1%>%
   filter(species=="PB",testes %in% target_repro,wgt>=16)%>%
@@ -58,7 +65,7 @@ pb3=rbind(pb1,pb2)
 
 pb4=pb3%>%
   mutate(proportion=repro/count, species="PB")
-write.csv(df4, "PB_props.csv")
+write.csv(pb4, "PB_props.csv")
 PB_props=read.csv("PB_props.csv")
 
 
@@ -93,8 +100,9 @@ pp2=left_join(PP_all_con,PPcon)
 pp3=rbind(pp1,pp2)
 
 pp4=pp3%>%
-  mutate(proportion=repro/count, species="PP")
-write.csv(df4, "PP_props.csv")
+  mutate(proportion=repro/count, species="PP")%>%
+  filter(proportion<=1)
+write.csv(pp4, "PP_props.csv")
 PP_props=read.csv("PP_props.csv")
 
 #### PE proportions#####
@@ -239,7 +247,9 @@ RM_props=read.csv("RM_props.csv")
 
 #combine all species####
 
-all_sp=rbind(PB_props, PE_props, PP_props, PF_props, PM_props, RM_props)%>%
-      filter(!is.na(proportion))
+all_sp=rbind(PB_props, PE_props, PP_props, PF_props, PM_props, RM_props)
+
+write.csv(all_sp, "all_props_NA.csv")
+all_props=read.csv("all_props_NA.csv")
 
 max(all_sp$proportion)
