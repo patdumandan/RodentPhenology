@@ -1,3 +1,4 @@
+#data manipulation####
 PB_props$trt<-ifelse(PB_props$variable=="repro_con", 0, 1)
 PB_props$years=(PB_props$year-mean(PB_props$year))/(2*sd(PB_props$year))
 PB_props[is.na(PB_props)] <- 0 #set non-detects to 0
@@ -12,6 +13,7 @@ dat_list=list(
   Nmon=12
 )
 
+#data analysis####
 pb_prop_male_mod=stan(model_code = "
 
 data{
@@ -85,3 +87,7 @@ data{
     log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
    
   }", data=dat_list, chains=2, iter=300)
+
+#model output####
+print(all_prop_male_mod, pars=c("alpha","alpha_mon", "alpha_sp","trt_eff", "year_eff"))
+saveRDS(all_prop_male_mod, "all_sp_betabinom_mod.RDS")
