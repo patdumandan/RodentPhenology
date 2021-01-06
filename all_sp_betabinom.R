@@ -16,6 +16,7 @@ dat_list=list(
   Nsp=length(unique(all_sp$species))
 )
 
+# MODEL INFRASTRUCTURE ####
 all_prop_male_mod=stan(model_code = "
 
 data{
@@ -106,6 +107,10 @@ data{
 print(mod1, pars=c("alpha","alpha_mon", "alpha_sp","trt_eff", "year_eff"))
 saveRDS(all_prop_male_mod, "all_sp_betabinom_mod.RDS")
 mod1=readRDS("all_sp_betabinom_mod.RDS")
+
+#MODEL EVALUATION####
+post_male=rstan::extract(mod1)$log_lik
+loo(post_male) #-820.6 +/- 50.3
 
 #OUTPUT VISUALIZATION####
 plot_all_raw=all_sp%>%
