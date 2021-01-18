@@ -1,0 +1,10 @@
+**male reproductive phenology models**  
+* evaluate model fit using looic values 
+
+1. HBB:  -820.6 +/- 50.3
+2. no random effects: -94.3 +/- 19.9
+3. intercept allowed to vary per species only and trt effect allowed to vary per month: 
+
+**female reproductive phenology models**
+
+1. HBB: -843.6 +/- 58.9
