@@ -17,7 +17,7 @@ PB=portal1%>%
   arrange(wgt)
 
 PP=portal1%>%
-  filter(species=="PP",testes %in% target_repro, wgt>=10)%>%
+  filter(species=="PP",testes %in% target_repro)%>%
   arrange(wgt)
 
 PE=portal1%>%
@@ -255,10 +255,11 @@ all_sp=rbind(PB_props, PE_props, PP_props, PF_props, PM_props, RM_props)%>%
   arrange(repro)
 
 write.csv(all_sp, "all_props_NA.csv")
-all_props=read.csv("all_props_NA.csv")
+all_props=read.csv("./reconfigured_data/all_props_NA.csv")
 hist(all_sp$proportion) #overdispersed 0 and 1 proportions
 min(all_props$proportion, na.rm=T)
-
+sum(all_props$repro, na.rm=T)
+#5257/11646= TOTAL NUMBER OF REPRODUCTIVE INDIVIDUALS IN BOTH CONTROL AND EXCLOURES
 #female indivs####
 target_vag=c("S", "P", "B")
 target_nip=c("R", "E", "B")
@@ -333,7 +334,7 @@ pmf3=rbind(pmf1,pmf2)
 pmf4=pmf3%>%
   mutate(proportion=repro/count, species="PM")
 write.csv(pmf4, "PMf_props.csv")
-PMf_props=read.csv("PMf_props.csv")
+PMf_props=read.csv("./reconfigured_data/PMf_props.csv")
 
 #### PBf proportions#####
 
@@ -368,7 +369,7 @@ pbf3=rbind(pbf1,pbf2)
 pbf4=pbf3%>%
   mutate(proportion=repro/count, species="PB")
 write.csv(pbf4, "PBf_props.csv")
-PBf_props=read.csv("PBf_props.csv")
+PBf_props=read.csv("./reconfigured_data/PBf_props.csv")
 
 #### PPf proportions#####
 
@@ -403,7 +404,7 @@ ppf3=rbind(ppf1,ppf2)
 ppf4=ppf3%>%
   mutate(proportion=repro/count, species="PP")
 write.csv(ppf4, "PPf_props.csv")
-PPf_props=read.csv("PPf_props.csv")
+PPf_props=read.csv("./reconfigured_data/PPf_props.csv")
 
 #### PEf proportions#####
 
@@ -438,7 +439,7 @@ pef3=rbind(pef1,pef2)
 pef4=pef3%>%
   mutate(proportion=repro/count, species="PE")
 write.csv(pef4, "PEf_props.csv")
-PEf_props=read.csv("PEf_props.csv")
+PEf_props=read.csv("./reconfigured_data/PEf_props.csv")
 
 #### PFf proportions#####
 
@@ -473,7 +474,7 @@ pff3=rbind(pff1,pff2)
 pff4=pff3%>%
   mutate(proportion=repro/count, species="PF")
 write.csv(pff4, "PFf_props.csv")
-PFf_props=read.csv("PFf_props.csv")
+PFf_props=read.csv("./reconfigured_data/PFf_props.csv")
 
 #### RMf proportions#####
 
@@ -508,8 +509,9 @@ rmf3=rbind(rmf1,rmf2)
 rmf4=rmf3%>%
   mutate(proportion=repro/count, species="RM")
 write.csv(rmf4, "RMf_props.csv")
-RMf_props=read.csv("RMf_props.csv")
+RMf_props=read.csv("./reconfigured_data/RMf_props.csv")
 
 #combine all female indivs####
 all_female_sp=rbind(PBf_props, PEf_props, PPf_props, PFf_props, PMf_props, RMf_props)%>%
   arrange(repro)
+write.csv(all_female_sp, "all_fem_props.csv")
