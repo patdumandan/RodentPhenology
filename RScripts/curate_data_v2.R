@@ -1,133 +1,148 @@
+####load packages####
+
 library(dplyr)
-library(tidyr)
 library(portalr)
+library(ggplot2)
 
-Portal_data=load_rodent_data()
-Portal_rodent=Portal_data[["rodent_data"]]
-Portal_plots=Portal_data[["plots_table"]]
+####load cleaned individual-level data####
+Portal_data_indiv=summarize_individual_rodents(
+  path = get_default_data_path(),
+  clean = TRUE,
+  type = "Rodents",
+  length = "all",
+  unknowns = FALSE,
+  time = "date",
+  fillweight = FALSE,
+  min_plots = 1,
+  min_traps = 1,
+  download_if_missing = TRUE,
+  quiet = FALSE
+)%>%filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month))
 
-portal1=inner_join(Portal_rodent, Portal_plots, by= c("plot", "month", "year"))%>%
-  filter(!(treatment=="removal"))%>%
-  mutate(month=factor(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
+# add columns for reproductive traits
+Portal_data=load_rodent_data(clean = TRUE)
+Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
+  filter(!is.na(sex))
+
+#create full dataset without removal plots
+portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
+  filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
                                            "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
                                            "10"="Oct","11"="Nov", "12"="Dec"))%>%
-  select(period, month, Month, day, year, plot, treatment, species, sex, reprod, vagina, nipples,lactation, pregnant, testes,hfl,wgt)
-str(portal1)
-unique(portal1$species)
-unique(portal1$treatment)
+  select(period, month, Month, day, year, plot, stake,
+         treatment, species, sex, reprod, vagina, nipples,lactation, pregnant, testes,hfl,wgt, tag)
 
-#male individuals####
-#spetabs an removal plots--what to do??
+str(portal1)
+#length(unique(portal1$species))
+#unique(portal1$treatment)
+
+
+#CREATE DATASET FOR MALE ADULTS ONLY
+
+portal_male=portal1%>%filter(sex=="M") #49% of individuals are males
+head(portal_male)
+
+####determine threshold for breeding adult male individuals####
 
 target_repro=c("S", "M", "R")
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+head(repro_male)
+
+#BA=repro_male%>%
+#  filter(species=="BA")%>%
+#  arrange(wgt)
 
 #size thresholds####
-BA=portal1%>%
-  filter(species=="BA",testes %in% target_repro, wgt >=6)%>%
-  arrange(wgt)
+BA=repro_male%>%
+  filter(species=="BA", wgt >=6)
 
-DM=portal1%>%
-  filter(species=="DM",testes %in% target_repro, wgt >=15)%>%
-  arrange(wgt)
+DM=repro_male%>%
+  filter(species=="DM", wgt >=15)
 
-DO=portal1%>%
-  filter(species=="DO",testes %in% target_repro, wgt >=29)%>%
-  arrange(wgt)
+DO=repro_male%>%
+  filter(species=="DO", wgt >=29)
 
-DS=portal1%>%
-  filter(species=="DS",testes %in% target_repro, wgt >=12)%>%
-  arrange(wgt)
+DS=repro_male%>%
+  filter(species=="DS", wgt >=12)
 
-NEA=portal1%>%
-  filter(species=="NA",testes %in% target_repro, wgt >=121)%>%
-  arrange(wgt)
+NEA=repro_male%>%
+  filter(species=="NA", wgt >=121)
 
-OL=portal1%>%
-  filter(species=="OL",testes %in% target_repro, wgt >=19)%>%
-  arrange(wgt)
+OL=repro_male%>%
+  filter(species=="OL", wgt >=19)
 
-OT=portal1%>%
-  filter(species=="OT",testes %in% target_repro, wgt >=10)%>%
-  arrange(wgt)
+OT=repro_male%>%
+  filter(species=="OT", wgt >=10)
 
-PH=portal1%>%
-  filter(species=="PH",testes %in% target_repro, wgt >=18)%>%
-  arrange(wgt)
+PH=repro_male%>%
+  filter(species=="PH", wgt >=18)
 
-PL=portal1%>%
-  filter(species=="PL",testes %in% target_repro, wgt >=20)%>%
-  arrange(wgt)
+PL=repro_male%>%
+  filter(species=="PL", wgt >=20)
 
-PB=portal1%>%
-  filter(species=="PB",testes %in% target_repro,wgt >=16)%>%
-  arrange(wgt)
+PB=repro_male%>%
+  filter(species=="PB", wgt >=16)
 
-PP=portal1%>%
-  filter(species=="PP",testes %in% target_repro, wgt >=10)%>%
-  arrange(wgt)
+PP=repro_male%>%
+  filter(species=="PP", wgt >=10)
 
-PE=portal1%>%
-  filter(species=="PE",testes %in% target_repro, wgt >=7)%>%
-  arrange(wgt)
+PE=repro_male%>%
+  filter(species=="PE", wgt >=7)
 
-PF=portal1%>%
-  filter(species=="PF",testes %in% target_repro, wgt >=4)%>%
-  arrange(wgt)
+PI=repro_male%>%
+  filter(species=="PI", wgt >=15)
 
-PM=portal1%>%
-  filter(species=="PM",testes %in% target_repro, wgt >=11)%>%
-  arrange(wgt)
-#1 individual identified as juv but size within reproductive??
+PF=repro_male%>%
+  filter(species=="PF", wgt >=4)
 
-RM=portal1%>%
-  filter(species=="RM",testes %in% target_repro, wgt >=4)%>%
-  arrange(wgt)
+PM=repro_male%>%
+  filter(species=="PM", wgt >=11)
 
-RF=portal1%>%
-  filter(species=="RF",testes %in% target_repro, wgt >=11)%>%
-  arrange(wgt)
+RM=repro_male%>%
+  filter(species=="RM", wgt >=4)
 
-RO=portal1%>%
-  filter(species=="RO",testes %in% target_repro, wgt >=6)%>%
-  arrange(wgt)
+RF=repro_male%>%
+  filter(species=="RF", wgt >=11)
 
-SF=portal1%>%
-  filter(species=="SF",testes %in% target_repro, wgt >=39)%>%
-  arrange(wgt)
+RO=repro_male%>%
+  filter(species=="RO", wgt >=6)
 
-SH=portal1%>%
-  filter(species=="SH",testes %in% target_repro, wgt >=51)%>%
-  arrange(wgt)
+SF=repro_male%>%
+  filter(species=="SF", wgt >=39)
 
-SO=portal1%>%
-  filter(species=="SO",testes %in% target_repro, wgt >=68)%>%
-  arrange(wgt)
+SH=repro_male%>%
+  filter(species=="SH", wgt >=51)
+
+SO=repro_male%>%
+  filter(species=="SO", wgt >=68)
 
 #create full dataset with all species
 
-full_repro_male_dat=rbind(SO,SH,SF,RO,RM,RF,PP,PM,PL,PH,PF,PE,PB,OT,OL,NEA,DS,DO,DM,BA)
-write.csv(full_repro_male_dat, "repro_male_all.csv")
+full_repro_male_dat=rbind(SO,SH,SF,RO,RM,RF,PP,PM,PL,PH,PF,PE,PB,OT,OL,NEA,DS,DO,DM,BA, PI)
+full_repro_male_dat=as.data.frame(full_repro_male_dat)
+head(full_repro_male_dat)
 
-repro_male_all=read.csv("repro_male_all.csv")
+####calculate proportion of reproductive individuals####
 
-#read in individual rodents
-indivs=summarize_individual_rodents()%>%
-  filter(!(treatment=="removal"& NA), sex=="M")
-
-#summarize repro_male count
-repro_dat=repro_male_all%>%
+#get count of reproductive males for each species per month per year per trt
+repro_dat=full_repro_male_dat%>%
   group_by(month, year, treatment, species)%>%
   summarise(reproductive=n())
 
-#summarize total rodents count
-total_rodents=indivs%>%
-  group_by(month, year, treatment, species)%>%
+#get total observed abundance for each species per month per year per trt
+total_rodents=portal_male%>%
+  group_by(month,year, treatment, species)%>%
   summarise(abundance=n())
 
-total_proportion=left_join(repro_dat, total_rodents)%>%
-  mutate(proportion=reproductive/abundance)
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion=right_join(repro_dat, total_rodents)%>%
+  mutate(proportion=reproductive/abundance)%>%
+  arrange(proportion)
+length(unique(total_proportion$species))
+max(total_proportion$proportion, na.rm=T)
 
-#figure out how to address the NA in species
-
-#bad periods???
 
