@@ -1,0 +1,462 @@
+require(portalr)
+require(dplyr)
+require(ggplot2)
+
+#Data Curation####
+####load cleaned individual-level data
+Portal_data_indiv=summarize_individual_rodents(
+  path = get_default_data_path(),
+  clean = TRUE,
+  type = "Rodents",
+  length = "all",
+  unknowns = FALSE,
+  time = "date",
+  fillweight = FALSE,
+  min_plots = 1,
+  min_traps = 1,
+  download_if_missing = TRUE,
+  quiet = FALSE
+)%>%filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month))
+
+# add columns for reproductive traits
+Portal_data=load_rodent_data(clean = TRUE)
+Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
+  filter(!is.na(sex))
+
+#create full dataset without removal plots
+portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
+  filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
+                                                 "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
+                                                 "10"="Oct","11"="Nov", "12"="Dec"))%>%
+  select(period, month, Month, day, year, plot, stake,
+         treatment, species, sex, reprod, vagina, nipples,lactation, pregnant, testes,hfl,wgt, tag)
+
+str(portal1)
+
+
+### Data Manipulation ####
+
+
+portal_male=portal1%>%filter(sex=="M") #49% of individuals are males
+head(portal_male)
+
+####determine threshold for breeding adult male individuals
+
+target_repro=c("S", "M", "R")
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+head(repro_male)
+
+#BA=repro_male%>%
+#  filter(species=="BA")%>%
+#  arrange(wgt)
+
+#size thresholds
+BA=repro_male%>%
+  filter(species=="BA", wgt >=6)
+
+DM=repro_male%>%
+  filter(species=="DM", wgt >=15)
+
+DO=repro_male%>%
+  filter(species=="DO", wgt >=29)
+
+DS=repro_male%>%
+  filter(species=="DS", wgt >=12)
+
+NEA=repro_male%>%
+  filter(species=="NA", wgt >=121)
+
+OL=repro_male%>%
+  filter(species=="OL", wgt >=19)
+
+OT=repro_male%>%
+  filter(species=="OT", wgt >=10)
+
+PH=repro_male%>%
+  filter(species=="PH", wgt >=18)
+
+PL=repro_male%>%
+  filter(species=="PL", wgt >=20)
+
+PB=repro_male%>%
+  filter(species=="PB", wgt >=16)
+
+PP=repro_male%>%
+  filter(species=="PP", wgt >=10)
+
+PE=repro_male%>%
+  filter(species=="PE", wgt >=7)
+
+PI=repro_male%>%
+  filter(species=="PI", wgt >=15)
+
+PF=repro_male%>%
+  filter(species=="PF", wgt >=4)
+
+PM=repro_male%>%
+  filter(species=="PM", wgt >=11)
+
+RM=repro_male%>%
+  filter(species=="RM", wgt >=4)
+
+RF=repro_male%>%
+  filter(species=="RF", wgt >=11)
+
+RO=repro_male%>%
+  filter(species=="RO", wgt >=6)
+
+SF=repro_male%>%
+  filter(species=="SF", wgt >=39)
+
+SH=repro_male%>%
+  filter(species=="SH", wgt >=51)
+
+SO=repro_male%>%
+  filter(species=="SO", wgt >=68)
+
+#create full dataset with all species
+
+full_repro_male_dat=rbind(SO,SH,SF,RO,RM,RF,PP,PM,PL,PH,PF,PE,PB,OT,OL,NEA,DS,DO,DM,BA, PI)
+full_repro_male_dat=as.data.frame(full_repro_male_dat)
+head(full_repro_male_dat)
+
+####calculate proportion of reproductive individuals
+
+#get count of reproductive males for each species per month per year per trt
+repro_dat=full_repro_male_dat%>%
+  group_by(month, year, treatment, species)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_rodents=portal_male%>%
+  group_by(month,year, treatment, species)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion=right_join(repro_dat, total_rodents)%>%
+  mutate(proportion=reproductive/abundance)%>%
+  arrange(proportion)
+head(total_proportion)
+#length(unique(total_proportion$species)) #21 spp
+#max(total_proportion$proportion, na.rm=T) #1
+
+
+### Data Visualization ####
+
+#sample using PB data only
+PB_dat_M=total_proportion%>%filter(species=="PB", !(treatment=="spectabs"))
+plot(PB_dat_M$proportion~PB_dat_M$year)
+####plot PB proportion across all years per trt type
+PB_dat_M%>%
+  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
+  geom_point()+geom_smooth(se = FALSE, method = 'loess')
+
+####plot PB proportion across all years per trt type per month
+PB_dat_M%>%
+  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)
+PB_dat_M=as.data.frame(PB_dat_M)
+####plot PB proportion across all years per month per trt type
+#control
+PB_dat_M_con=total_proportion%>%filter(species=="PB", treatment=="control")
+PB_dat_M_con%>%
+  ggplot(mapping = aes(x=year, y=proportion))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)+ggtitle("PB male control")
+
+#exclosure
+PB_dat_M_ex=total_proportion%>%filter(species=="PB", treatment=="exclosure")
+PB_dat_M_ex%>%
+  ggplot(mapping = aes(x=year, y=proportion))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)+ggtitle("PB male exclosure")
+
+
+dat_list=list(
+  N=length(PB_dat_M$month),
+  y=PB_dat_M$reproductive,
+  n=PB_dat_M$abundance,
+  year=PB_dat_M$years,
+  treatment=PB_dat_M$trt,
+  mon_cos=PB_dat_M$mon_cos, 
+  mon_sin=PB_dat_M$mon_sin,
+  Nmon=length(unique(PB_dat_M$month)),
+  Nsp=length(unique(PB_dat_M$species)))
+PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PBprop=PB_dat_M$proportion
+PBrep=PB_dat_M$reproductive
+
+#Beta-binomial model variations####
+#intercept only model####
+mod_int5=stan(model_code="
+   data{
+  int<lower=0> N; // no.of obs
+  int <lower=0> y[N];       // reproductive indivs
+  int <lower=0>  n[N];       // total males
+ // vector [N] year;// year
+//  vector[N] treatment;// treatment
+ // int month[N]; //ID of each month
+// int Nmon; //no.of months
+ // int species[N]; //species ID
+// int Nsp; //no.of species
+ }
+                
+ parameters {
+  real alpha;// intercept
+  //real year_eff; //slope year
+ // real trt_eff; //slope treatment effect
+  //real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
+  //real <lower=0> mon_non;//non-centered error term for species
+  //real<lower=0> sigma_sp[Nsp];//error for random intercept (species)
+  //real <lower=0> sp_non;//non-centered error term for month
+  real <lower=0> phi;
+  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive event 
+              }
+   
+  transformed parameters{
+  vector <lower=0, upper=1> [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+  vector <lower=0> [N] A;
+  vector <lower=0> [N] B;
+  //vector [Nmon] alpha_mon; //random intercept per species
+   //vector [Nsp] alpha_sp; //random intercept per species
+  //vector [Nmon] yr_mon; //random slope per month for year effect
+  //vector [Nmon] trt_mon;//random slope per month for treatment effect
+
+  
+  //for (j in 1:Nmon) {
+  
+  //alpha_mon[j]= mon_non*sigma_mon[j];}
+  
+ //  for (k in 1:Nsp) {
+  
+  //alpha_sp[k]= sp_non*sigma_sp[k];}
+  
+  //model:
+  
+  for (i in 1:N){
+  
+  repro_mu[i]= inv_logit(alpha);
+  }
+  
+  A = repro_mu * phi;
+  B = (1 - repro_mu)* phi;
+  
+  }
+ model {
+  //priors
+ // year_eff~ normal (0,1);
+  //trt_eff~ normal (0,1);
+  //mon_non~ normal(0,1);
+  //sigma_mon~ normal(0,1);
+  phi ~normal(0,1);
+  //sp_non~ normal(0,1);
+  //sigma_sp~ normal(0,1);
+  
+  //model likelihood:
+  
+  pred_repro ~ beta(A, B); // survival estimate, beta dist.
+  y~binomial(n, pred_repro); //no.of survivors drawn from binomial dist; based on sample size and reported survival estimate
+ 
+ }
+  
+  generated quantities {
+  
+  real pred_y [N];//predictions on proportions
+  real log_lik [N];// for looic calculations
+  
+    pred_y = beta_rng(A, B);
+    
+    for (x in 1:N){
+    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+   
+  }    ", data=dat_list, chains=4, iter=3000)
+saveRDS(mod_int5, "PB_intercept.RDS")
+m1_loo=extract(mod_int5)$log_lik
+loo(m1_loo) #-562.9 +/- 26.2
+
+#year and treatment effect model####
+mod_int6=stan(model_code="
+   data{
+  int<lower=0> N; // no.of obs
+  int <lower=0> y[N];       // reproductive indivs
+  int <lower=0>  n[N];       // total males
+  vector [N] year;// year
+  vector[N] treatment;// treatment
+ // int month[N]; //ID of each month
+// int Nmon; //no.of months
+ // int species[N]; //species ID
+// int Nsp; //no.of species
+ }
+                
+ parameters {
+  real alpha;// intercept
+  real year_eff; //slope year
+  real trt_eff; //slope treatment effect
+  //real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
+  //real <lower=0> mon_non;//non-centered error term for species
+  //real<lower=0> sigma_sp[Nsp];//error for random intercept (species)
+  //real <lower=0> sp_non;//non-centered error term for month
+  real <lower=0> phi;
+  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive event 
+              }
+   
+  transformed parameters{
+  vector <lower=0, upper=1> [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+  vector <lower=0> [N] A;
+  vector <lower=0> [N] B;
+  //vector [Nmon] alpha_mon; //random intercept per species
+   //vector [Nsp] alpha_sp; //random intercept per species
+  //vector [Nmon] yr_mon; //random slope per month for year effect
+  //vector [Nmon] trt_mon;//random slope per month for treatment effect
+
+  
+  //for (j in 1:Nmon) {
+  
+  //alpha_mon[j]= mon_non*sigma_mon[j];}
+  
+ //  for (k in 1:Nsp) {
+  
+  //alpha_sp[k]= sp_non*sigma_sp[k];}
+  
+  //model:
+  
+  for (i in 1:N){
+  
+  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]);
+  }
+  
+  A = repro_mu * phi;
+  B = (1 - repro_mu)* phi;
+  
+  }
+ model {
+  //priors
+  year_eff~ normal (0,1);
+  trt_eff~ normal (0,1);
+  //mon_non~ normal(0,1);
+  //sigma_mon~ normal(0,1);
+  phi ~normal(0,1);
+  //sp_non~ normal(0,1);
+  //sigma_sp~ normal(0,1);
+  
+  //model likelihood:
+  
+  pred_repro ~ beta(A, B); // survival estimate, beta dist.
+  y~binomial(n, pred_repro); //no.of survivors drawn from binomial dist; based on sample size and reported survival estimate
+ 
+ }
+  
+  generated quantities {
+  
+  real pred_y [N];//predictions on proportions
+  real log_lik [N];// for looic calculations
+  
+    pred_y = beta_rng(A, B);
+    
+    for (x in 1:N){
+    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+   
+  }    ", data=dat_list, chains=4, iter=3000)
+saveRDS(mod_int6, "PB_intyrtrt.RDS")
+m2_loo=extract(mod_int6)$log_lik
+loo(m2_loo) #-562.4+26.2
+
+#year, treatment effect and trigonometric functions for a circular variable(month)####
+mod_int7=stan(model_code="
+   data{
+  int<lower=0> N; // no.of obs
+  int <lower=0> y[N];       // reproductive indivs
+  int <lower=0>  n[N];       // total males
+  vector [N] year;// year
+  vector [N]mon_cos;//cosine month
+  vector [N]mon_sin;//sine of month
+  vector[N] treatment;// treatment
+ // int month[N]; //ID of each month
+// int Nmon; //no.of months
+ // int species[N]; //species ID
+// int Nsp; //no.of species
+ }
+                
+ parameters {
+  real alpha;// intercept
+  real year_eff; //slope year
+  real trt_eff; //slope treatment effect
+  real monc_eff;
+  real mons_eff;
+  //real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
+  //real <lower=0> mon_non;//non-centered error term for species
+  //real<lower=0> sigma_sp[Nsp];//error for random intercept (species)
+  //real <lower=0> sp_non;//non-centered error term for month
+  real <lower=0> phi;
+  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive event 
+              }
+   
+  transformed parameters{
+  vector <lower=0, upper=1> [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+  vector <lower=0> [N] A;
+  vector <lower=0> [N] B;
+  //vector [Nmon] alpha_mon; //random intercept per species
+   //vector [Nsp] alpha_sp; //random intercept per species
+  //vector [Nmon] yr_mon; //random slope per month for year effect
+  //vector [Nmon] trt_mon;//random slope per month for treatment effect
+
+  
+  //for (j in 1:Nmon) {
+  
+  //alpha_mon[j]= mon_non*sigma_mon[j];}
+  
+ //  for (k in 1:Nsp) {
+  
+  //alpha_sp[k]= sp_non*sigma_sp[k];}
+  
+  //model:
+  
+  for (i in 1:N){
+  
+  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]+monc_eff*mon_cos[i]+mons_eff*mon_sin[i]);
+  }
+  
+  A = repro_mu * phi;
+  B = (1 - repro_mu)* phi;
+  
+  }
+ model {
+  //priors
+  year_eff~ normal (0,1);
+  trt_eff~ normal (0,1);
+  monc_eff~normal(0,1);
+  mons_eff~normal(0,1);
+  //mon_non~ normal(0,1);
+  //sigma_mon~ normal(0,1);
+  phi ~normal(0,1);
+  //sp_non~ normal(0,1);
+  //sigma_sp~ normal(0,1);
+  
+  //model likelihood:
+  
+  pred_repro ~ beta(A, B); // survival estimate, beta dist.
+  y~binomial(n, pred_repro); //no.of survivors drawn from binomial dist; based on sample size and reported survival estimate
+ 
+ }
+  
+  generated quantities {
+  
+  real pred_y [N];//predictions on proportions
+  real log_lik [N];// for looic calculations
+  
+    pred_y = beta_rng(A, B);
+    
+    for (x in 1:N){
+    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+   
+  }    ", data=dat_list, chains=4, iter=3000)
+saveRDS(mod_int7, "PB_intyrtrtmon.RDS")
+m3_loo=extract(mod_int7)$log_lik
+loo(m3_loo) #-592.4+27.8
