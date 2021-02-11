@@ -1,6 +1,13 @@
 require(portalr)
 require(dplyr)
 require(ggplot2)
+require(rstan)
+require(brms)
+require(rstanarm)
+require(bayesplot)
+
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
 
 #Data Curation####
 ####load cleaned individual-level data
@@ -27,7 +34,7 @@ Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
 #create full dataset without removal plots
 portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
   filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
-  mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
+  mutate(month=as.integer(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
                                                  "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
                                                  "10"="Oct","11"="Nov", "12"="Dec"))%>%
   select(period, month, Month, day, year, plot, stake,
@@ -138,9 +145,10 @@ total_rodents=portal_male%>%
 #calculate proportion
 #this creates NAs for months when no reproductive male was recorded
 total_proportion=right_join(repro_dat, total_rodents)%>%
-  mutate(proportion=reproductive/abundance)%>%
+  mutate(proportion=reproductive/abundance, month=as.integer(month))%>%
   arrange(proportion)
 head(total_proportion)
+
 #length(unique(total_proportion$species)) #21 spp
 #max(total_proportion$proportion, na.rm=T) #1
 
@@ -176,6 +184,14 @@ PB_dat_M_ex%>%
   geom_point()+geom_smooth(se = FALSE, method = 'lm')+
   facet_wrap(~month)+ggtitle("PB male exclosure")
 
+PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PBprop=PB_dat_M$proportion
+PBrep=PB_dat_M$reproductive
+PB_dat_M$mon_cos= cos(2*pi*(PB_dat_M$month/12))
+PB_dat_M$mon_sin= sin(2*pi*(PB_dat_M$month/12))
+
 
 dat_list=list(
   N=length(PB_dat_M$month),
@@ -187,11 +203,7 @@ dat_list=list(
   mon_sin=PB_dat_M$mon_sin,
   Nmon=length(unique(PB_dat_M$month)),
   Nsp=length(unique(PB_dat_M$species)))
-PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
-PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
-PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
-PBprop=PB_dat_M$proportion
-PBrep=PB_dat_M$reproductive
+
 
 #Beta-binomial model variations####
 #intercept only model####
@@ -251,6 +263,7 @@ mod_int5=stan(model_code="
   }
  model {
   //priors
+  alpha~normal(0,1);
  // year_eff~ normal (0,1);
   //trt_eff~ normal (0,1);
   //mon_non~ normal(0,1);
@@ -279,7 +292,8 @@ mod_int5=stan(model_code="
   }    ", data=dat_list, chains=4, iter=3000)
 saveRDS(mod_int5, "PB_intercept.RDS")
 m1_loo=extract(mod_int5)$log_lik
-loo(m1_loo) #-562.9 +/- 26.2
+loo(m1_loo) #-559.9 +/- 26.2
+print(mod_int6, pars=c("alpha", "phi"))
 
 #year and treatment effect model####
 mod_int6=stan(model_code="
@@ -338,6 +352,7 @@ mod_int6=stan(model_code="
   }
  model {
   //priors
+  alpha~normal(0,1);
   year_eff~ normal (0,1);
   trt_eff~ normal (0,1);
   //mon_non~ normal(0,1);
@@ -366,7 +381,8 @@ mod_int6=stan(model_code="
   }    ", data=dat_list, chains=4, iter=3000)
 saveRDS(mod_int6, "PB_intyrtrt.RDS")
 m2_loo=extract(mod_int6)$log_lik
-loo(m2_loo) #-562.4+26.2
+loo(m2_loo) #-558.4+26
+print(mod_int6, pars=c("alpha", "phi", "year_eff", "trt_eff"))
 
 #year, treatment effect and trigonometric functions for a circular variable(month)####
 mod_int7=stan(model_code="
@@ -429,6 +445,7 @@ mod_int7=stan(model_code="
   }
  model {
   //priors
+  alpha~normal(0,1);
   year_eff~ normal (0,1);
   trt_eff~ normal (0,1);
   monc_eff~normal(0,1);
@@ -458,5 +475,91 @@ mod_int7=stan(model_code="
    
   }    ", data=dat_list, chains=4, iter=3000)
 saveRDS(mod_int7, "PB_intyrtrtmon.RDS")
-m3_loo=extract(mod_int7)$log_lik
-loo(m3_loo) #-592.4+27.8
+PB_intyrtrtmon=readRDS("./model_output/PB_intyrtrtmon.RDS")
+m3_loo=extract(PB_intyrtrtmon)$log_lik
+loo(m3_loo) #-593.7+/- 27.7
+y=PB_dat_M$proportion
+yrep=extract(mod_int7)$repro_mu
+yrep=as.data.frame(yrep)
+ppc_dens_overlay(y, yrep[1:500,])
+print(mod_int7, pars=c("alpha", "phi", "year_eff", "trt_eff", "monc_eff", "mons_eff"))
+
+#PB control
+con_pb=yrep[which(PB_dat_M$treatment=="control"& PB_dat_M$month==3)]
+con_pbmat=as.matrix(con_pb)
+con_pbs=con_pbmat[1:1000,]
+matplot(t(con_pbs), type="l", col="grey", main="PB control (March)", ylim=c(0,1))
+mean_con_pb=apply(con_pb, 2, mean)
+con_pb_obs=PB_dat_M%>%filter(treatment=="control"& month==3)
+lines(mean_con_pb~c(1:length(mean_con_pb)), col="white")
+points(con_pb_obs$proportion, col="black", cex=2 )
+
+#PB exclosure
+ex_pb=yrep[which(PB_dat_M$treatment=="exclosure"& PB_dat_M$month==3)]
+matplot(t(ex_pb), type="l", col="grey", main="PB exclosure (March)")
+mean_ex_pb=apply(ex_pb, 2, mean)
+ex_pb_obs=PB_dat_M%>%filter(treatment=="exclosure"& month==3)
+lines(mean_ex_pb~c(1:length(mean_ex_pb)), col="white")
+points(ex_pb_obs$proportion, col="black", cex=0.5)
+
+
+
+#beta-binomial with autocorrelation structure (brms)####
+#define custom response distribution (Buerkner)
+
+total_prop=read.csv("./reconfigured_data/raw_cleaned/reprod_propn_male.csv")
+
+beta_binomial2 <- custom_family(
+  "beta_binomial2", dpars = c("mu", "phi"),
+  links = c("logit", "log"), lb = c(NA, 0),
+  type = "int", vars = "vint1[n]"
+)
+
+stan_funs <- "
+  real beta_binomial2_lpmf(int y, real mu, real phi, int T) {
+    return beta_binomial_lpmf(y | T, mu * phi, (1 - mu) * phi);
+  }
+  int beta_binomial2_rng(real mu, real phi, int T) {
+    return beta_binomial_rng(T, mu * phi, (1 - mu) * phi);
+  }
+"
+stanvars <- stanvar(scode = stan_funs, block = "functions")
+
+total_prop$trt<-ifelse(total_prop$treatment=="control", 0, 1) 
+total_prop$years=(total_prop$year-mean(total_prop$year))/(2*sd(total_prop$year)) #standardize year
+total_prop[is.na(total_prop)] <- 0 #set non-detects to 0
+
+
+#subset for PB only
+PB_dat_M=total_prop%>%filter(species=="PB", !(treatment=="spectabs"))
+
+PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PBprop=PB_dat_M$proportion
+PBrep=PB_dat_M$reproductive
+
+pb_mod=brm(reproductive | vint (abundance) ~ ar(p=1, cov=TRUE)+trt, data= PB_dat_M,
+           family=beta_binomial2, stanvar=stanvars, chains=2, iter=100)
+saveRDS(pb_mod, "autocor_brms.RDS")
+
+stancode(pb_mod)
+expose_functions(pb_mod, vectorize = TRUE)
+posterior_predict_beta_binomial2 <- function(i, prep,...) {
+  mu <- prep$dpars$mu[, i]
+  phi <- prep$dpars$phi
+  trials <- prep$data$vint1[i]
+  beta_binomial2_rng(mu, phi, trials)
+}
+
+pp_check(pb_mod)
+
+log_lik_beta_binomial2 <- function(i, prep) {
+  mu <- prep$dpars$mu[, i]
+  phi <- prep$dpars$phi
+  trials <- prep$data$vint1[i]
+  y <- prep$data$Y[i]
+  beta_binomial2_lpmf(y, mu, phi, trials)
+}
+
+loo(pb_mod)
