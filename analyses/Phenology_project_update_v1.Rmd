@@ -1,0 +1,429 @@
+---
+title: "Phenology Project update"
+author: "Pat Dumandan"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### **Project Overview**
+
+Reproductive phenology is a key descriptor of an important ecological strategy of organisms (Schwartz, 2003). It is a period that requires high energetic costs for individuals which is why efforts need to be optimized such that they are able to exploit resources while avoiding unfavorable conditions (Bradshaw and Holzapfel 2007). Thus, identifying the abiotic (e.g., climate change) and biotic conditions (e.g., presence of competitors) that may drive shifts in the timing of these reproductive events is important in understanding how the demography of wildlife populations may vary in future landscape scenarios. However, our understanding of how most organisms time these events given their environmental context is generally lacking. This is especially true for nocturnal small mammals that are often challenging to obtain data for. Here, I attempt to construct the reproductive phenology of rodents monitored in a study site near Portal, Arizona. I also describe the phenophases of rodents at different biotic conditions to test inferences on the effects of competititve interactions on small mammal reproduction.  
+
+### **Methods**  
+
+
+**Data Source**  
+*(Methods for Data collection at Portal,AZ and sexing rodents)*
+
+
+**Data Curation and Manipulation**
+
+
+We assembled a dataset on the observed abundance of individual small mammals in Portal, Arizona that were exhibiting reproductive characteristics (Oregon manual). We used the functionalities of the ‘portalr’ package (Yenni et al. 2019) to obtain partially cleaned individual-level data (i.e., removal of data with bad tags, periods, etc.). From this cleaned dataset, we created subsets for each type of plot (control and exclosure) and sex (male and female). For our analysis, we assigned individuals as reproductive males for those that had testes described to be scrotal (descended), recently scrotal, and had minor signs of scrotal testes. We identified reproductive females as those that were described to be pregnant (after palpating the belly), with either red or enlarged (or both) nipples, and those with swollen or plugged (or both) vaginas. To limit the introduction of biases in our dataset through the inclusion of juveniles, we identified a minimum threshold of the body mass for the breeding individuals for each species and sex. Then, we filtered out individuals that had a body mass below the threshold for each group. Finally, we calculated the monthly proportion of breeding individuals for each species and sex by dividing the number of reproductive individuals observed by the total number of individuals for each species and sex in each plot type in each year.
+
+```{r warning=FALSE, message=FALSE}
+require(portalr)
+require(dplyr)
+require(ggplot2)
+require (lme4)
+require(rstan)
+require(brms)
+require(rstanarm)
+require(bayesplot)
+
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+####load cleaned individual-level data####
+Portal_data_indiv=summarize_individual_rodents(
+  path = get_default_data_path(),
+  clean = TRUE,
+  type = "Rodents",
+  length = "all",
+  unknowns = FALSE,
+  time = "date",
+  fillweight = FALSE,
+  min_plots = 1,
+  min_traps = 1,
+  download_if_missing = TRUE,
+  quiet = FALSE
+)%>%filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month))
+
+# add columns for reproductive traits
+Portal_data=load_rodent_data(clean = TRUE)
+Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
+  filter(!is.na(sex))
+
+#create full dataset without removal plots
+portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
+  filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
+                                           "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
+                                           "10"="Oct","11"="Nov", "12"="Dec"))%>%
+  select(period, month, Month, day, year, plot, stake,
+         treatment, species, sex, reprod, vagina, nipples,lactation, pregnant, testes,hfl,wgt, tag)
+
+str(portal1)
+
+portal_male=portal1%>%filter(sex=="M") #49% of individuals are males
+head(portal_male)
+
+####determine threshold for breeding adult male individuals####
+
+target_repro=c("S", "M", "R")
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+head(repro_male)
+
+#BA=repro_male%>%
+#  filter(species=="BA")%>%
+#  arrange(wgt)
+
+#size thresholds####
+BA=repro_male%>%
+  filter(species=="BA", wgt >=6)
+
+DM=repro_male%>%
+  filter(species=="DM", wgt >=15)
+
+DO=repro_male%>%
+  filter(species=="DO", wgt >=29)
+
+DS=repro_male%>%
+  filter(species=="DS", wgt >=12)
+
+NEA=repro_male%>%
+  filter(species=="NA", wgt >=121)
+
+OL=repro_male%>%
+  filter(species=="OL", wgt >=19)
+
+OT=repro_male%>%
+  filter(species=="OT", wgt >=10)
+
+PH=repro_male%>%
+  filter(species=="PH", wgt >=18)
+
+PL=repro_male%>%
+  filter(species=="PL", wgt >=20)
+
+PB=repro_male%>%
+  filter(species=="PB", wgt >=16)
+
+PP=repro_male%>%
+  filter(species=="PP", wgt >=10)
+
+PE=repro_male%>%
+  filter(species=="PE", wgt >=7)
+
+PI=repro_male%>%
+  filter(species=="PI", wgt >=15)
+
+PF=repro_male%>%
+  filter(species=="PF", wgt >=4)
+
+PM=repro_male%>%
+  filter(species=="PM", wgt >=11)
+
+RM=repro_male%>%
+  filter(species=="RM", wgt >=4)
+
+RF=repro_male%>%
+  filter(species=="RF", wgt >=11)
+
+RO=repro_male%>%
+  filter(species=="RO", wgt >=6)
+
+SF=repro_male%>%
+  filter(species=="SF", wgt >=39)
+
+SH=repro_male%>%
+  filter(species=="SH", wgt >=51)
+
+SO=repro_male%>%
+  filter(species=="SO", wgt >=68)
+
+#create full dataset with all species
+
+full_repro_male_dat=rbind(SO,SH,SF,RO,RM,RF,PP,PM,PL,PH,PF,PE,PB,OT,OL,NEA,DS,DO,DM,BA, PI)
+full_repro_male_dat=as.data.frame(full_repro_male_dat)
+head(full_repro_male_dat)
+
+####calculate proportion of reproductive individuals####
+
+#get count of reproductive males for each species per month per year per trt
+repro_dat=full_repro_male_dat%>%
+  group_by(month, year, treatment, species)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_rodents=portal_male%>%
+  group_by(month,year, treatment, species)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion=right_join(repro_dat, total_rodents)%>%
+  mutate(proportion=reproductive/abundance)%>%
+  arrange(proportion)
+head(total_proportion)
+#length(unique(total_proportion$species)) #21 spp (but 1 is weird: we don't really think the PIs recorded are true PIs)
+#max(total_proportion$proportion, na.rm=T) #1, to check that there are no weird proportions (more reprods than actual abundance!)
+```
+
+
+**Data Analysis**  
+
+*Model Variations*  
+*Note: I am currently exploring two models to address my research question: 1) hierarchical beta-binomial model with trigonometric functions (sine and cosine terms to account for periodicity) and 2) hierarchical BB model with an autocorrelation term (to account for non-independence in monthly data)*     
+*I am exploring variations of the models using only on a subset of the full dataset and focusing only on PBs (Bailey's pocket mouse) for now*
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+#sample using PB data only
+PB_dat_M=total_proportion%>%filter(species=="PB", !(treatment=="spectabs"))
+plot(PB_dat_M$proportion~PB_dat_M$year)
+####plot PB proportion across all years per trt type
+PB_dat_M%>%
+  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')
+
+####plot PB proportion across all years per trt type per month
+PB_dat_M%>%
+  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)
+PB_dat_M=as.data.frame(PB_dat_M)
+####plot PB proportion across all years per month per trt type
+#control
+PB_dat_M_con=total_proportion%>%filter(species=="PB", treatment=="control")
+PB_dat_M_con%>%
+  ggplot(mapping = aes(x=year, y=proportion))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)+ggtitle("PB male control")
+
+#exclosure
+PB_dat_M_ex=total_proportion%>%filter(species=="PB", treatment=="exclosure")
+PB_dat_M_ex%>%
+  ggplot(mapping = aes(x=year, y=proportion))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)+ggtitle("PB male exclosure")
+
+PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PBprop=PB_dat_M$proportion
+PB_dat_M$month=as.integer(PB_dat_M$month)
+PBrep=PB_dat_M$reproductive
+PB_dat_M$mon_cos= cos(2*pi*(PB_dat_M$month/12))
+PB_dat_M$mon_sin= sin(2*pi*(PB_dat_M$month/12))
+```
+
+*Hierarchical beta-binomial model*    
+We evaluated the effect of year and biotic interaction (i.e., presence/absence of kangaroo  rats) on the breeding phenology of representative species of small mammals recorded on site using a hierarchical beta-binomial model. This modelling approach is used to evaluate the probabilities of observing successes (i.e., number of reproductive individuals) given a number of trials (i.e., total number of captured individuals), with the probabilities assumed to follow a beta distribution (i.e., proportion of reproductive individuals; Lee and Sabavala, 1987). This framework has been widely used in the fields of epidemiology (Griffiths, 1973), medical diagnostics (Kuss, Hoyer, and Soms, 2014), mental testing (Lord, 1965), and human-environmental studies (Layton and Siikamäki, 2009). Using this model is considered useful in effectively accounting for overdispersion in the data (i.e., we can quantify the process driving overdispersion in the observation data by estimating Φ (variance) parameter; Martin et al. 2005). Here, we used a hierarchical beta-binomial model with the form (XX *to be determined once I figure out which one is more appropriate*):
+
+
+*Hierarchical BB with cosinor terms*
+
+```{r warning=FALSE, message=FALSE}
+
+#mod_cosin=stan(model_code="
+#   data{
+#  int<lower=0> N; // no.of obs
+#  int <lower=0> y[N];       // reproductive indivs
+#  int <lower=0>  n[N];       // total males
+#  vector [N] year;// year
+#  vector [N]mon_cos;//cosine month
+#  vector [N]mon_sin;//sine of month
+#  vector[N] treatment;// treatment
+# }
+                
+# parameters {
+#  real alpha;// intercept
+#  real year_eff; //slope year
+#  real trt_eff; //slope treatment effect
+#  real monc_eff;
+#  real mons_eff;
+#  real <lower=0> phi;
+#  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive indivs
+#              }
+   
+#  transformed parameters{
+#  vector <lower=0, upper=1> [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+#  vector <lower=0> [N] A;
+#  vector <lower=0> [N] B;
+
+#  for (i in 1:N){
+  
+#  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]+monc_eff*mon_cos[i]+mons_eff*mon_sin[i]);
+#  }
+  
+#  A = repro_mu * phi;
+#  B = (1 - repro_mu)* phi;
+  
+#  }
+ 
+# model {
+#  //priors
+#  alpha~normal(0,1);
+#  year_eff~ normal (0,1);
+#  trt_eff~ normal (0,1);
+#  monc_eff~normal(0,1);
+#  mons_eff~normal(0,1);
+#  phi ~normal(0,1);
+  
+#  //model likelihood:
+  
+#  pred_repro ~ beta(A, B); // 
+#  y~binomial(n, pred_repro); //no.of reproductive males drawn from binomial dist; based on sample size and proportion
+ 
+# }
+  
+#  generated quantities {
+  
+#  real pred_y [N];//predictions on proportions
+#  real log_lik [N];// for looic calculations
+  
+#    pred_y = beta_rng(A, B);
+    
+#    for (x in 1:N){
+#    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+   
+# }    ", data=dat_list, chains=4, iter=3000)
+PB_intyrtrtmon=readRDS("./model_output/PB_intyrtrtmon.RDS")
+
+#model evaluation using LOOIC:
+m3_loo=extract(PB_intyrtrtmon)$log_lik
+loo(m3_loo) #-593.7+/- 27.7
+
+#model evaluation using PPD(posterior predictive checks):
+y=PB_dat_M$proportion
+yrep=rstan::extract(PB_intyrtrtmon)$pred_y
+yrep=as.matrix(yrep)
+bayesplot::ppc_dens_overlay(y, yrep[1:500,])
+
+con_pb=yrep[,which(PB_dat_M$treatment=="control"& PB_dat_M$month==3)]
+con_pbmat=as.matrix(con_pb)
+con_pbs=con_pbmat[1:300,]
+matplot(t(con_pbs), type="l", col="grey", main="PB control (March)")
+mean_con_pb=apply(con_pb, 2, mean)
+con_pb_obs=PB_dat_M%>%filter(treatment=="control"& month==3)
+lines(mean_con_pb~c(1:length(mean_con_pb)), col="white")
+points(con_pb_obs$proportion, col="black", cex=1 )
+
+print(PB_intyrtrtmon, pars=c("alpha", "phi", "year_eff", "trt_eff", "monc_eff", "mons_eff"))
+
+```
+
+### **WOULD LOVE TO GET FEEDBACK/YOUR THOUGHTS ON**  
+* cycle/period is currently "fixed" not allowed to vary per year. any idea how I could add that in the model?    
+* temporal autocorrelation: how do people usually address this?  
+* should I build a "composite" (all species so keep being hierarchical in that sense) or model each species separately?  
+* how do you interpret the paraemters for the sine-cosine terms?   
+
+
+*hierarchical BB model with AR1 term (more like intercept only actually)* 
+
+```{r warning= FALSE, message=FALSE}
+# pbyr_autocor=stan(model_code=
+# "functions { // adopt this function to add AR1 structure in Stan models: https://www.flutterbys.com.au/stats/tut/tut8.3b.html
+#  matrix cov_matrix_ar1(real ar, real sigma, int nrows) { 
+#    matrix[nrows, nrows] mat; 
+#    vector[nrows - 1] gamma; 
+#    mat = diag_matrix(rep_vector(1, nrows)); 
+#    for (i in 2:nrows) { 
+#      gamma[i - 1] = pow(ar, i - 1); 
+#      for (j in 1:(i - 1)) { 
+#        mat[i, j] = gamma[i - j]; 
+#        mat[j, i] = gamma[i - j]; 
+#      }     } 
+#    return sigma^2 / (1 - ar^2) * mat; 
+#  }} 
+
+#data { 
+#  int<lower=1> N;  // total number of observations 
+#  int <lower=0> y[N];       // reproductive indivs
+#  int <lower=0>  n[N];       // total males
+#}
+
+# transformed data {
+#  vector[N] se2 = rep_vector(0, N); 
+#} 
+
+#parameters { 
+#  real alpha;
+
+#  real<lower=0> sigma;  // residual SD 
+#  real <lower=-1,upper=1> phi;  // autoregressive effects 
+#  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive indivs
+#  real <lower=0>psi;//overdispersion param
+#} 
+
+#transformed parameters{
+#  vector [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+#  vector[N] A;
+#  vector [N] B;
+ 
+#//model:
+  
+#  for (i in 1:N){
+  
+#  repro_mu[i]= inv_logit(alpha);
+#  }
+  
+#  A = repro_mu * psi;
+#  B = (1 - repro_mu)* psi;
+#}
+
+# model {
+
+#  matrix[N, N] res_cov_matrix;
+#  matrix[N, N] Sigma; 
+#  res_cov_matrix = cov_matrix_ar1(phi, sigma, N);
+#  Sigma = res_cov_matrix + diag_matrix(se2);
+#  Sigma = cholesky_decompose(Sigma); 
+
+#//likelihood:
+
+#  alpha~normal(0,1);
+
+#  psi~normal(0,1);
+#  sigma ~ cauchy(0,5);
+  
+#  pred_repro ~beta (A,B);
+#  y~ binomial(n, pred_repro);
+#}
+
+#generated quantities {
+  
+#  real pred_y [N];//predictions on proportions
+#  real log_lik [N];// for looic calculations
+  
+#  pred_y = beta_rng(A, B);
+  
+#  for (x in 1:N){
+#    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+  
+#}", data=dat_list, chains=2, iter=300) 
+
+pbyr_autocor1=readRDS("./model_output/pbyr_autocor1.RDS")
+yrep2=rstan::extract(pbyr_autocor1)$pred_y
+bayesplot::ppc_dens_overlay(y, yrep2)
+
+con_pb=yrep2[,which(PB_dat_M$treatment=="control"& PB_dat_M$month==3)]
+con_pbmat=as.matrix(con_pb)
+con_pbs=con_pbmat[1:300,]
+matplot(t(con_pbs), type="l", col="grey", main="PB control (March)")
+mean_con_pb=apply(con_pb, 2, mean)
+con_pb_obs=PB_dat_M%>%filter(treatment=="control"& month==3)
+lines(mean_con_pb~c(1:length(mean_con_pb)), col="white")
+points(con_pb_obs$proportion, col="black", cex=1 )
+
+print(pbyr_autocor1, pars=c("alpha"))
+```
+
+### **WOULD LOVE TO GET FEEDBACK/THOUGHTS ON**  
+* thoughts on other models that I could use where I can easily account for autocorrelation that doesn't take forever to run (this ran for 3 hours with just 300 iterations. maybe any thoughts on how to optimize it?  
+
+
