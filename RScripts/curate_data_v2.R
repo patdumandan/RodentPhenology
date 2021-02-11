@@ -35,6 +35,8 @@ portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
          treatment, species, sex, reprod, vagina, nipples,lactation, pregnant, testes,hfl,wgt, tag)
 
 str(portal1)
+portal_reproductive=as.data.frame(portal1)
+write.csv(portal_reproductive, "portal_reproductive.csv")
 #length(unique(portal1$species))
 #unique(portal1$treatment)
 
@@ -124,7 +126,7 @@ SO=repro_male%>%
 full_repro_male_dat=rbind(SO,SH,SF,RO,RM,RF,PP,PM,PL,PH,PF,PE,PB,OT,OL,NEA,DS,DO,DM,BA, PI)
 full_repro_male_dat=as.data.frame(full_repro_male_dat)
 head(full_repro_male_dat)
-
+write.csv(full_repro_male_dat, "portal_reproductive_male.csv")
 ####calculate proportion of reproductive individuals####
 
 #get count of reproductive males for each species per month per year per trt
@@ -142,7 +144,9 @@ total_rodents=portal_male%>%
 total_proportion=right_join(repro_dat, total_rodents)%>%
   mutate(proportion=reproductive/abundance)%>%
   arrange(proportion)
-length(unique(total_proportion$species))
+
+reprod_propn_male=as.data.frame(total_proportion)
+write.csv(reprod_propn_male, "reprod_propn_male.csv")
 max(total_proportion$proportion, na.rm=T)
 
 
