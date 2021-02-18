@@ -152,6 +152,20 @@ head(total_proportion)
 #length(unique(total_proportion$species)) #21 spp
 #max(total_proportion$proportion, na.rm=T) #1
 
+#summary stats####
+#total indivs across all years: 58345
+#no. of males: 28755
+#% of males: 49%
+#no of reproductive males: 4971
+# % of males in repro.mode across all years: 18%
+
+####Testing for Autocorrelation####
+
+y=PB_dat_M$proportion
+mod_lm=lm(proportion~year, data=PB_dat_M)
+yrep=mod_lm$residuals
+require(lmtest)
+dwtest(yrep~PB_dat_M$year) #autocorrelation exists (DW=0.06, p < 0.05)
 
 ### Data Visualization ####
 
@@ -295,6 +309,91 @@ m1_loo=extract(mod_int5)$log_lik
 loo(m1_loo) #-559.9 +/- 26.2
 print(mod_int6, pars=c("alpha", "phi"))
 
+#year only####
+mod_int9=stan(model_code="
+   data{
+  int<lower=0> N; // no.of obs
+  int <lower=0> y[N];       // reproductive indivs
+  int <lower=0>  n[N];       // total males
+  vector [N] year;// year
+  //vector[N] treatment;// treatment
+ // int month[N]; //ID of each month
+// int Nmon; //no.of months
+ // int species[N]; //species ID
+// int Nsp; //no.of species
+ }
+                
+ parameters {
+  real alpha;// intercept
+  real year_eff; //slope year
+  real trt_eff; //slope treatment effect
+  //real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
+  //real <lower=0> mon_non;//non-centered error term for species
+  //real<lower=0> sigma_sp[Nsp];//error for random intercept (species)
+  //real <lower=0> sp_non;//non-centered error term for month
+  real <lower=0> phi;
+  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive event 
+              }
+   
+  transformed parameters{
+  vector <lower=0, upper=1> [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+  vector <lower=0> [N] A;
+  vector <lower=0> [N] B;
+  //vector [Nmon] alpha_mon; //random intercept per species
+   //vector [Nsp] alpha_sp; //random intercept per species
+  //vector [Nmon] yr_mon; //random slope per month for year effect
+  //vector [Nmon] trt_mon;//random slope per month for treatment effect
+
+  
+  //for (j in 1:Nmon) {
+  
+  //alpha_mon[j]= mon_non*sigma_mon[j];}
+  
+ //  for (k in 1:Nsp) {
+  
+  //alpha_sp[k]= sp_non*sigma_sp[k];}
+  
+  //model:
+  
+  for (i in 1:N){
+  
+  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]);
+  }
+  
+  A = repro_mu * phi;
+  B = (1 - repro_mu)* phi;
+  
+  }
+ model {
+  //priors
+  alpha~normal(0,1);
+  year_eff~ normal (0,1);
+  trt_eff~ normal (0,1);
+  //mon_non~ normal(0,1);
+  //sigma_mon~ normal(0,1);
+  phi ~normal(0,1);
+  //sp_non~ normal(0,1);
+  //sigma_sp~ normal(0,1);
+  
+  //model likelihood:
+  
+  pred_repro ~ beta(A, B); // survival estimate, beta dist.
+  y~binomial(n, pred_repro); //no.of survivors drawn from binomial dist; based on sample size and reported survival estimate
+ 
+ }
+  
+  generated quantities {
+  
+  real pred_y [N];//predictions on proportions
+  real log_lik [N];// for looic calculations
+  
+    pred_y = beta_rng(A, B);
+    
+    for (x in 1:N){
+    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+   
+  }    ", data=dat_list, chains=2, iter=300)
+
 #year and treatment effect model####
 mod_int6=stan(model_code="
    data{
@@ -381,6 +480,21 @@ mod_int6=stan(model_code="
   }    ", data=dat_list, chains=4, iter=3000)
 saveRDS(mod_int6, "PB_intyrtrt.RDS")
 m2_loo=extract(mod_int6)$log_lik
+mod_int6=readRDS("./model_output/PB_intyrtrt.RDS")
+yrep2=rstan::extract(mod_int6)$pred_y
+bayesplot::ppc_dens_overlay(y, yrep2)
+y=PB_dat_M$proportion
+con_pb=yrep2[,which(PB_dat_M$treatment=="control"& PB_dat_M$month==3)]
+con_pbmat=as.matrix(con_pb)
+con_pbs=con_pbmat[1:300,]
+matplot(t(con_pbs), type="l", col="grey", main="PB control (March)")
+mean_con_pb=apply(con_pb, 2, mean)
+con_pb_obs=PB_dat_M%>%filter(treatment=="control"& month==3)
+lines(mean_con_pb~c(1:length(mean_con_pb)), col="white")
+points(con_pb_obs$proportion, col="black", cex=1 )
+
+
+
 loo(m2_loo) #-558.4+26
 print(mod_int6, pars=c("alpha", "phi", "year_eff", "trt_eff"))
 
@@ -406,6 +520,8 @@ mod_int7=stan(model_code="
   real trt_eff; //slope treatment effect
   real monc_eff;
   real mons_eff;
+    real monc_eff2;
+  real mons_eff2;
   //real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
   //real <lower=0> mon_non;//non-centered error term for species
   //real<lower=0> sigma_sp[Nsp];//error for random intercept (species)
@@ -436,7 +552,8 @@ mod_int7=stan(model_code="
   
   for (i in 1:N){
   
-  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]+monc_eff*mon_cos[i]+mons_eff*mon_sin[i]);
+  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]+monc_eff*mon_cos[i]+mons_eff*mon_sin[i]+
+  +monc_eff2*mon_cos[i]+mons_eff2*mon_sin[i]);
   }
   
   A = repro_mu * phi;
@@ -450,6 +567,8 @@ mod_int7=stan(model_code="
   trt_eff~ normal (0,1);
   monc_eff~normal(0,1);
   mons_eff~normal(0,1);
+   monc_eff2~normal(0,1);
+  mons_eff2~normal(0,1);
   //mon_non~ normal(0,1);
   //sigma_mon~ normal(0,1);
   phi ~normal(0,1);
@@ -473,7 +592,7 @@ mod_int7=stan(model_code="
     for (x in 1:N){
     log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
    
-  }    ", data=dat_list, chains=4, iter=3000)
+  }    ", data=dat_list, chains=2, iter=300)
 saveRDS(mod_int7, "PB_intyrtrtmon.RDS")
 PB_intyrtrtmon=readRDS("./model_output/PB_intyrtrtmon.RDS")
 m3_loo=extract(PB_intyrtrtmon)$log_lik
