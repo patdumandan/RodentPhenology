@@ -8,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### **Project Overview**
 
-Reproductive phenology is a key descriptor of an important ecological strategy of organisms (Schwartz, 2003). It is a period that requires high energetic costs for individuals which is why efforts need to be optimized such that they are able to exploit resources while avoiding unfavorable conditions (Bradshaw and Holzapfel 2007). Thus, identifying the abiotic (e.g., climate change) and biotic conditions (e.g., presence of competitors) that may drive shifts in the timing of these reproductive events is important in understanding how the demography of wildlife populations may vary in future landscape scenarios. However, our understanding of how most organisms time these events given their environmental context is generally lacking. This is especially true for nocturnal small mammals that are often challenging to obtain data for. Here, I attempt to construct the reproductive phenology of rodents monitored in a study site near Portal, Arizona. I also describe the phenophases of rodents at different biotic conditions to test inferences on the effects of competititve interactions on small mammal reproduction.  
+Reproductive phenology is a key descriptor of an important ecological strategy of organisms (Schwartz, 2003). Reproduction is a period in the life cycle of organisms that requires high energetic costs. As such, efforts of breeding individuals need to be optimized to ensure that they are able to exploit resources while avoiding unfavorable conditions (Bradshaw and Holzapfel 2007). Thus, identifying the abiotic (e.g., climate change) and biotic conditions (e.g., presence of competitors) that may drive shifts in the timing of these reproductive events is important in understanding how the demography of wildlife populations may vary in future landscape scenarios. However, our understanding of how most organisms time these events given their environmental context is generally lacking. This is especially true for small mammals in the wild that are often challenging to obtain data for. Here, we describe the reproductive phenophases of rodents monitored in a study site near Portal, Arizona and determine how biotic conditions (i.e., competitive interactions) influence their reproductive phenology.  
 
 ### **Methods**  
 
@@ -59,7 +59,7 @@ Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
 #create full dataset without removal plots
 portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
   filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
-  mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
+  mutate(month=as.integer(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
                                            "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
                                            "10"="Oct","11"="Nov", "12"="Dec"))%>%
   select(period, month, Month, day, year, plot, stake,
@@ -177,24 +177,21 @@ head(total_proportion)
 **Data Analysis**  
 
 *Model Variations*  
-*Note: I am currently exploring two models to address my research question: 1) hierarchical beta-binomial model with trigonometric functions (sine and cosine terms to account for periodicity) and 2) hierarchical BB model with an autocorrelation term (to account for non-independence in monthly data)*     
-*I am exploring variations of the models using only on a subset of the full dataset and focusing only on PBs (Bailey's pocket mouse) for now*
+*Note:*     
+* I am currently exploring two models to address my research question: 1) hierarchical beta-binomial model with trigonometric functions (sine and cosine terms to account for periodicity) and 2) hierarchical BB model with an autocorrelation term (to account for non-independence in monthly data)       
+* I am exploring variations of the models using only on a subset of the full dataset and focusing only on PBs (Bailey's pocket mouse) for now
 
 ```{r warning=FALSE, message=FALSE, echo=FALSE}
 #sample using PB data only
 PB_dat_M=total_proportion%>%filter(species=="PB", !(treatment=="spectabs"))
-plot(PB_dat_M$proportion~PB_dat_M$year)
+
 ####plot PB proportion across all years per trt type
 PB_dat_M%>%
   ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
   geom_point()+geom_smooth(se = FALSE, method = 'lm')
 
 ####plot PB proportion across all years per trt type per month
-PB_dat_M%>%
-  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
-  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
-  facet_wrap(~month)
-PB_dat_M=as.data.frame(PB_dat_M)
+
 ####plot PB proportion across all years per month per trt type
 #control
 PB_dat_M_con=total_proportion%>%filter(species=="PB", treatment=="control")
@@ -220,11 +217,24 @@ PB_dat_M$mon_cos= cos(2*pi*(PB_dat_M$month/12))
 PB_dat_M$mon_sin= sin(2*pi*(PB_dat_M$month/12))
 ```
 
+*Temporal Autocorrelation check*
+```{r warning=FALSE, message=FALSE}
+library(lmtest)
+
+y=PB_dat_M$proportion
+mod_lm=lm(proportion~year, data=PB_dat_M)
+yrep=mod_lm$residuals
+require(lmtest)
+dwtest(yrep~PB_dat_M$year) #autocorrelation exists (DW=0.06, p < 0.05)
+
+```
+
+
 *Hierarchical beta-binomial model*    
 We evaluated the effect of year and biotic interaction (i.e., presence/absence of kangaroo  rats) on the breeding phenology of representative species of small mammals recorded on site using a hierarchical beta-binomial model. This modelling approach is used to evaluate the probabilities of observing successes (i.e., number of reproductive individuals) given a number of trials (i.e., total number of captured individuals), with the probabilities assumed to follow a beta distribution (i.e., proportion of reproductive individuals; Lee and Sabavala, 1987). This framework has been widely used in the fields of epidemiology (Griffiths, 1973), medical diagnostics (Kuss, Hoyer, and Soms, 2014), mental testing (Lord, 1965), and human-environmental studies (Layton and Siikamäki, 2009). Using this model is considered useful in effectively accounting for overdispersion in the data (i.e., we can quantify the process driving overdispersion in the observation data by estimating Φ (variance) parameter; Martin et al. 2005). Here, we used a hierarchical beta-binomial model with the form (XX *to be determined once I figure out which one is more appropriate*):
 
 
-*Hierarchical BB with cosinor terms*
+*Hierarchical BB with sine-cosine terms*
 
 ```{r warning=FALSE, message=FALSE}
 
@@ -315,12 +325,6 @@ points(con_pb_obs$proportion, col="black", cex=1 )
 print(PB_intyrtrtmon, pars=c("alpha", "phi", "year_eff", "trt_eff", "monc_eff", "mons_eff"))
 
 ```
-
-### **WOULD LOVE TO GET FEEDBACK/YOUR THOUGHTS ON**  
-* cycle/period is currently "fixed" not allowed to vary per year. any idea how I could add that in the model?    
-* temporal autocorrelation: how do people usually address this?  
-* should I build a "composite" (all species so keep being hierarchical in that sense) or model each species separately?  
-* how do you interpret the paraemters for the sine-cosine terms?   
 
 
 *hierarchical BB model with AR1 term (more like intercept only actually)* 
@@ -422,8 +426,8 @@ points(con_pb_obs$proportion, col="black", cex=1 )
 
 print(pbyr_autocor1, pars=c("alpha"))
 ```
-
-### **WOULD LOVE TO GET FEEDBACK/THOUGHTS ON**  
-* thoughts on other models that I could use where I can easily account for autocorrelation that doesn't take forever to run (this ran for 3 hours with just 300 iterations. maybe any thoughts on how to optimize it?  
-
+### **WOULD APPRECIATE YOUR THOUGHTS ON**  
+* How I'm interpreting what I'm doing right now is: I'm trying to describe what drives the proportion of reproductive individuals (breeding odds) but not really the "phenophases"/timing of reproduction (treating time as predictor and not really part of the response variable). Is this wrong? If yes, should I be creating metrics to describe when the 50% or 95% of the total reproductive individuals (or something) are counted? or for each year,determine the length of the "peak" season? 
+  
+* how do you interpret the parameters for the sine-cosine terms?   
 
