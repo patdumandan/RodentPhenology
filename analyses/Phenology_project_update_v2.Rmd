@@ -1,0 +1,335 @@
+---
+title: "Reproductive Phenology of PBs"
+author: "Pat Dumandan"
+date: "2/27/2021"
+output: html_document
+---
+
+```{r include=FALSE}
+require(dplyr)
+require(ggplot2)
+require(rstan)
+
+options(mc.cores = parallel::detectCores())
+
+tot_dat=read.csv("./reconfigured_data/raw_cleaned/reprod_propn_male.csv")
+
+PB_dat_M=tot_dat%>%filter(species=="PB", !(treatment=="spectabs"))
+PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PB_dat_M$months = (PB_dat_M$month - mean(PB_dat_M$month))/(2 *sd(PB_dat_M$month))
+PB_dat_M$mon_cos= cos(2*pi*(PB_dat_M$month/12))
+PB_dat_M$mon_sin= sin(2*pi*(PB_dat_M$month/12))
+PB_dat_M$spcode=as.integer(PB_dat_M$species)
+
+PB_gam_ex=PB_dat_M%>%
+  filter(treatment=="exclosure")
+
+require(mgcv)
+require(brms)
+require(dplyr)
+```
+
+## Goal: Identify how the proportion of breeding individuals vary across all months in control vs exclosure plots  
+*when do the proportions synchronize and/or diverge at the different treatment plots?*  
+*methods employed: GAM and change point model*
+
+```{r}
+
+ggplot(PB_dat_M, aes(y=proportion, x=month, col=treatment)) +
+  geom_point() +
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PB males")+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```
+
+
+### **PB control plots**
+```{r warning=FALSE, message= FALSE}
+
+PB_gam_con=PB_dat_M%>%
+  filter(treatment=="control")%>%
+  mutate(date=as.POSIXct(paste(month, "15", year, sep="-"), format="%m-%d-%Y"))
+```
+
+**Data Visualization**
+```{r message=FALSE}
+ggplot(PB_gam_con, aes(y=proportion, x=month)) +
+  geom_point() +
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PB males (control)")+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```
+
+**GAM with autocorrelation structure**
+```{r message=FALSE}
+m1=gamm(proportion~s(month, bs="cc", k=12), data=PB_gam_con, correlation = corARMA(form= ~1|year, p=2))
+plot(m1$gam)
+summary(m1$gam)
+```
+
+#### Notes:  
+* seems like there is a clear period of high breeding intensity around Feb-Apr in control plots, which coincides with the hot and wet (summer) season? and with the underlying data   
+* figure out what the y-lab is in the gam viz  
+* figure out what this warning message means: saturated likelihood may be inaccurate when I try family=betar(link="logit"), which also gives negative values for variance explained
+
+**Calculate derivatives: to identify period of change**
+
+```{r warning=FALSE, message= FALSE}
+tmpf <- tempfile()
+download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",tmpf)
+source(tmpf)
+
+want=seq(1, nrow(PB_gam_con), length.out = 200)
+pdat=with(PB_gam_con, data.frame(year=year[want], month=month[want]))
+p2=predict(m1$gam, newdata=pdat, type="terms", se.fit = TRUE)
+pdat=transform(pdat, p2=p2$fit[,1], se2=p2$se.fit[,1]) #p2=fit, se2=std.error
+
+df.res=df.residual(m1$gam)
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat=transform(pdat, upper=p2+(crit.t*se2), lower=p2-(crit.t*se2))
+
+Term <- "month"
+m1.d <- Deriv(m1)
+m1.dci <- confint(m1.d, term = Term)
+m1.dsig <- signifD(pdat$p2, d = m1.d[[Term]]$deriv,
+                     +m1.dci[[Term]]$upper, m1.dci[[Term]]$lower)
+
+plot.Deriv(m1.d, sizer =T)
+
+lines(pdat$month[order(pdat$month)], pdat$p2[order(pdat$month)], 
+       xlim=range(pdat$month), ylim=range(pdat$p2), pch=16,
+       col="black", lty="dashed")
+
+```
+
+#### Notes:  
+* fitted trend line (dashed) vs first derivatives: why do they look different and how do i interpret them? 
+* figure out how to extract the values coinciding with the locations where the estimated derivative is positive or negative  
+
+
+Since we're identifying when rates of change occurred anyway, why not try build a change point model and compare them?  
+
+
+**Change point model**
+```{r message=FALSE, warning=FALSE}
+datlist=list(N=length(PB_gam_con$X),year=PB_gam_con$years,
+             month=PB_gam_con$month, proportion=PB_gam_con$proportion)
+
+
+bkpt_con=stan(model_code="
+data {
+  int<lower=1> N;                      // sample size
+  vector<lower=0,upper=1>[N] proportion;        // response 
+  vector [N] month;                       // predictor month
+  vector [N] year; // predictor year
+}
+
+parameters{
+  real alpha; // intercept
+  real beta1;//slope 1
+  real beta2;//slope 2
+  real <lower=1, upper=12>bkpt;
+  real <lower=0> sigma;
+  real year_eff; //year effect
+}
+
+transformed parameters{
+  real prop_mu [N];
+
+for ( i in 1:N) {
+  if (month[i] < bkpt)
+    
+    prop_mu[i]=alpha+beta1* (month[i]*bkpt)+ year_eff*year[i];
+  
+  else
+    prop_mu[i]= alpha+ beta2 * (month[i]*bkpt+ year_eff*year[i]);
+  
+}
+  }
+
+model {
+  
+  alpha~normal(0,10);
+  beta1~ normal(0,10);
+  beta2~normal (0,10);
+  bkpt~ uniform(1,12);
+  sigma~cauchy(0,2.5);
+  year_eff~normal(0,10);
+  proportion~normal(prop_mu, sigma); }
+
+generated quantities {
+real prop_mu_pred [N];
+
+for (j in 1:N)
+prop_mu_pred[j]=normal_rng(prop_mu[j],sigma);
+
+}
+
+
+", data=datlist, chains=4, iter=1000)
+```
+
+Change point model output
+```{r message=FALSE}
+print(bkpt_con, pars=c("alpha", "beta1", "beta2", "bkpt", "year_eff"))
+post=rstan::extract(bkpt_con)$prop_mu
+post=as.data.frame(post)
+post=t(post)
+t1=cbind(PB_gam_con$month,PB_gam_con$year, post)
+t1=as.data.frame(t1)
+t1=t1%>%
+  rename(year=V2, month=V1)
+t2=reshape2::melt(t1, id=c("year", "month"))
+plot(t2$value~t2$month, type="l", col="grey", ylim=c(0,1))
+points(PB_gam_con$proportion~PB_gam_con$month, col="blue", pch=16)
+
+abline(v=2.85, col="black", lty="dashed")
+rect(1,0,5,1, col = rgb(0.5,0.5,0.5,1/4))
+```
+#### Notes:  
+* it seems like the model is able to estimate with a bit of high uncertainty when the changepoint is: month 1-5 but mean is around 2-3 (Feb-March) in control plots  
+* but what if there are multiple change points? 
+* what if I allowed the intercept, slope and breakpoint to vary per treatment group instead?  
+
+
+### **PB exclosure plots**
+```{r warning=FALSE, message= FALSE}
+PB_gam_ex=PB_dat_M%>%
+  filter(treatment=="exclosure")%>%
+  mutate(date=as.POSIXct(paste(month, "15", year, sep="-"), format="%m-%d-%Y"))
+```
+
+**Data Visualization**
+```{r message=FALSE}
+ggplot(PB_gam_ex, aes(y=proportion, x=month)) +
+  geom_point() +
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PB males (exclosure)")+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```
+
+**GAM with autocorrelation structure**
+```{r message=FALSE}
+m2=gamm(proportion~s(month, bs="cc", k=12), data=PB_gam_ex, correlation = corARMA(form= ~1|year, p=2))
+plot(m2$gam)
+summary(m2$gam)
+```
+
+**Calculate derivatives: to identify period of change**
+
+```{r warning=FALSE, message= FALSE}
+
+want=seq(1, nrow(PB_gam_ex), length.out = 200)
+pdat2=with(PB_gam_ex, data.frame(year=year[want], month=month[want]))
+p3=predict(m2$gam, newdata=pdat2, type="terms", se.fit = TRUE)
+pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1])
+
+df.res=df.residual(m2$gam)
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
+
+Term <- "month"
+m2.d <- Deriv(m2)
+m2.dci <- confint(m2.d, term = Term)
+m2.dsig <- signifD(pdat2$p3, d = m2.d[[Term]]$deriv,
+                     +m2.dci[[Term]]$upper, m2.dci[[Term]]$lower)
+
+plot.Deriv(m2.d, sizer =T)
+
+lines(pdat2$month[order(pdat2$month)], pdat2$p3[order(pdat2$month)], 
+       xlim=range(pdat2$month), ylim=range(pdat2$p3), pch=16,
+       col="black", lty="dashed")
+
+```
+
+#### Notes:  
+*seems like Feb is the inflection period in exclosures but looking at raw data, seems like there isn't a real "peak" period. they just reproduce whenever 
+
+```{r message=FALSE, warning=FALSE}
+datlist2=list(N=length(PB_gam_ex$X),year=PB_gam_ex$years,
+             month=PB_gam_ex$month, proportion=PB_gam_ex$proportion)
+
+
+bkpt_ex=stan(model_code="
+data {
+  int<lower=1> N;                      // sample size
+  vector<lower=0,upper=1>[N] proportion;        // response 
+  vector [N] month;                       // predictor month
+  vector [N] year; // predictor year
+}
+
+parameters{
+  real alpha; // intercept
+  real beta1;//slope 1
+  real beta2;//slope 2
+  real <lower=1, upper=12>bkpt;
+  real <lower=0> sigma;
+  real year_eff; //year effect
+}
+
+transformed parameters{
+  real prop_mu [N];
+
+for ( i in 1:N) {
+  if (month[i] < bkpt)
+    
+    prop_mu[i]=alpha+beta1* (month[i]*bkpt)+ year_eff*year[i];
+  
+  else
+    prop_mu[i]= alpha+ beta2 * (month[i]*bkpt+ year_eff*year[i]);
+  
+}
+  }
+
+model {
+  
+  alpha~normal(0,10);
+  beta1~ normal(0,10);
+  beta2~normal (0,10);
+  bkpt~ uniform(1,12);
+  sigma~cauchy(0,2.5);
+  year_eff~normal(0,10);
+  proportion~normal(prop_mu, sigma); }
+
+generated quantities {
+real prop_mu_pred [N];
+
+for (j in 1:N)
+prop_mu_pred[j]=normal_rng(prop_mu[j],sigma);
+
+}
+
+
+", data=datlist2, chains=4, iter=1000)
+```
+
+```{r message=FALSE}
+print(bkpt_ex, pars=c("alpha", "beta1", "beta2", "bkpt", "year_eff"))
+post1=rstan::extract(bkpt_ex)$prop_mu
+post1=as.data.frame(post1)
+post1=t(post1)
+t3=cbind(PB_gam_ex$month,PB_gam_ex$year, post1)
+t3=as.data.frame(t3)
+t3=t3%>%
+  rename(year=V2, month=V1)
+t3=reshape2::melt(t3, id=c("year", "month"))
+plot(t3$value~t3$month, type="l", col="grey", ylim=c(0,1))
+points(PB_gam_ex$proportion~PB_gam_ex$month, col="blue", pch=16)
+
+abline(v=2, col="black", lty="dashed")
+rect(1,0,2,1, col = rgb(0.5,0.5,0.5,1/4))
+```
