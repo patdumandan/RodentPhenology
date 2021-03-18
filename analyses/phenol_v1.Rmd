@@ -27,10 +27,10 @@ We assembled a dataset on the observed abundance of individual PBs in Portal, Ar
 
 *Data Analysis*    
 
-*Phenology modelling*- We used a generalized additive modelling (GAM) approach to characterize the breeding phenology of PBs in different biotic contexts. Additive models are useful in describing non-linear relationships between response variables and predictors through the incorporation of smooth functions (Wood 2006). Here, we fitted a model with the form:  
+*Phenology model*- We used a generalized additive modelling (GAM) approach to characterize the breeding phenology of PBs in different biotic contexts. Additive models are useful in describing non-linear relationships between response variables and predictors through the incorporation of smooth functions (Wood 2006). Here, we fitted a model with the form:  
 
 $$ 
- Y_{ij} ~ Binomial (N_{ij}, p_{ij})           
+ Y_{ij} \sim Binomial (N_{ij}, p_{ij})           
  \text       {                                 (Eqn.1)                 } 
 $$  
 
@@ -40,7 +40,7 @@ logistic (P_{ij}) = \frac {exp(\alpha) + f_1 * (month)+ f_2 * (year))}{1 + (exp(
 \text       {                                    (Eqn.2)                 }
 $$ 
 
-In Eqn. 1, Yi is the proportion of breeding individuals at time point i, which follows a binomial distribution with the parameters N (i.e., total number of males) and p (i.e., proportion of breeding males). \(p_i\) is modelled as a logistic function of α, the population-level intercept, and \(f_1\) (month), the smooth function for the covariate month (Eqn. 2), which was parameterized using cubic cyclic regression splines (Pederson et al. 2019) and \(f_2\) (year), the smooth function of the covariate year, parameterized using Gaussian process smooths (Wood 2006). We evaluated other variations of the model but only describe the equation for the top model determined using Akaike’s information criterion (AIC; see Supplementary Materials for results of other model variations). To facilitate interpretation of the results, we standardized the year variable by centering each value on the mean and dividing them by two standard deviations (Gelman 2008). We implemented the model using a restricted maximum likelihood (REML) approach using the ‘mgcv’ package ver 1.8-31 (Wood 2011) in R ver 3.6.2 (R Core Team 2019).
+In Eqn. 1, \(Y_i\) is the proportion of breeding individuals at time point i, which follows a binomial distribution with the parameters N (i.e., total number of males) and p (i.e., proportion of breeding males). \(p_i\) is modelled as a logistic function of α, the population-level intercept, and \(f_1\) (month), the smooth function for the covariate month (Eqn. 2), which was parameterized using cubic cyclic regression splines (Pederson et al. 2019) and \(f_2\) (year), the smooth function of the covariate year, parameterized using Gaussian process smooths (Wood 2006). We evaluated other variations of the model but only describe the equation for the top model determined using Akaike’s information criterion (AIC; see Supplementary Materials for results of other model variations). To facilitate interpretation of the results, we standardized the year variable by centering each value on the mean and dividing them by two standard deviations (Gelman 2008). We implemented the model using a restricted maximum likelihood (REML) approach using the ‘mgcv’ package ver 1.8-31 (Wood 2011) in R ver 3.6.2 (R Core Team 2019).
 
 
 **Results**
@@ -199,4 +199,8 @@ m4.dsig <- signifD(pdat2$p3, d = m4.d[[Term]]$deriv,
 plot.Deriv(m4.d, sizer =T)
 ```   
 
-**Fig. 6. Intra- and inter-annual variations in the periods of change (first derivatives) in the reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) recorded in exclosure plots from 1996 to 2019. Blue and red lines indicate periods of statistically significant positive and negative trends, respectively.**   
+**Fig. 6. Intra- and inter-annual variations in the periods of change (first derivatives) in the reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) recorded in exclosure plots from 1996 to 2019. Blue and red lines indicate periods of statistically significant positive and negative trends, respectively.**     
+
+#### **To discuss with Morgan**  
+* i'm interested in adding an abiotic factor into the model to see how the proportion of breeding individuals relate to environmental variation and if that association also differs in the presence/absence of dominant competitors. would that be worthwhile to explore? if yes, what variables should i throw in?  
+* i was thinking of scaling down my focus for this project. instead of building a community-level phenology model, I was thinking of just building population-specific and sex-specific ones but choose 2 species that are potentially influenced differently by the presence/absence of k-rats. would that be reasonable? i was thinking more about how I want the model to be simple enough so that, as a side project related to portal forecasting, I can tweak it to make predictions of the breeding proportions for each month. or something. 
