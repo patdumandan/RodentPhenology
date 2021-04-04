@@ -1,6 +1,7 @@
 ---
-title: "Biotic interactions influence the breeding phenology of desert rodents"
+title: "The effects of biotic interactions on the breeding phenology of desert rodents"
 author: "Pat Dumandan"
+output: word_document
 ---
 **Introduction**    
 The impacts of recent climate change are largely implicated to shifts in biodiversity patterns (Bellard et al. 2012, Leadley et al. 2010). As such, identifying the mechanisms that underlie these links is often central to modern ecological research. Commonly, the abundance patterns of different species are correlated with various abiotic and biotic predictors (Grinnell 1917, Hutchinson 1957, MacArthur 1968). Several studies have also explored how phenology, or the timing of different life-history events (e.g., breeding, migration, dormancy) relate to environmental factors (Charmantier et al. 2008, Parmesan 2006). However, despite the recognition of the importance of abiotic factors in driving the onset and duration of phenological stages in the annual life cycle of different species, our knowledge of the effect of biotic context(e.g., competitive and mutualistic interactions) is limited.  
@@ -43,11 +44,11 @@ In Eqn. 1, \(Y_i\) is the proportion of breeding individuals at time point i, wh
 
 *Proportion of breeding individuals*  
 
-From 1995 to 2019, there were 3,529 records of male and 5,269 female PBs in both control and exclosure plots, of which ~11% (392 males and 577 females) exhibited reproductive characteristics. Records of reproductive individuals of both sexes were higher in exclosure plots (64% for males and 74% for females). On average, the proportion of breeding males and females were marginally higher in exclosure plots (13% for males, 12% for females) than in control plots (10% for males, 11% for females).  
+From 1995 to 2019, there were 3,529 records of male and 5,269 female PBs in both control and exclosure plots, of which ~11% (392 males and 577 females) exhibited reproductive characteristics (Fig.1). Records of reproductive individuals of both sexes were higher in exclosure plots (64% for males and 74% for females). On average, the proportion of breeding males and females were marginally higher in exclosure plots (13% for males, 12% for females) than in control plots (10% for males, 11% for females).  
 
-Unlike PBs, PPs were recorded on site since the beginning of the study, in 1977. Since then, there were 5,757 records of male PPs and 7,133 records of female PPs in both control and exclosure plots. Moreover, 14% (n=813) and 15% (n=1045) of the males and females, respectively, exhibited reproductive characteristics. Records of reproductive male and female PPs were roughly the same (~50%) in both types of plots (522 females in control and 523 in exclosure, 402 males in control and 411 in exclosure). As in PBs, the average proportion of breeding male and female PPs were marginally higher in exclosure plots (13% for males, 15% for females) than in control plots (12% for males, 14% for females). 
+Unlike PBs, PPs were recorded on site since the beginning of the study, in 1977. Since then, there were 5,757 records of male PPs and 7,133 records of female PPs in both control and exclosure plots. Moreover, 14% (n=813) and 15% (n=1045) of the males and females, respectively, exhibited reproductive characteristics (Fig.1). Records of reproductive male and female PPs were roughly the same (~50%) in both types of plots (522 females in control and 523 in exclosure, 402 males in control and 411 in exclosure). As in PBs, the average proportion of breeding male and female PPs were marginally higher in exclosure plots (13% for males, 15% for females) than in control plots (12% for males, 14% for females). 
 
-DMs, which are presumably the dominant players in the system, were also recorded since the beginning of the study. There have been 7,527 records of male and 5,870 female DMs since 1977 on site. Moreover, 22% (n=1658) and 17% (n=981) of the males and females, respectively, exhibited reproductive characteristics. As expected, records of reproductive male and female DMs were higher in control plots, where they were not intentionally removed (21% for males and 16% for females). On average, the proportion of breeding male and female DMs in the control plots was at 23% and 18%, respectively.    
+DMs, which are presumably the dominant players in the system, were also recorded since the beginning of the study. There have been 7,527 records of male and 5,870 female DMs since 1977 on site. Moreover, 22% (n=1658) and 17% (n=981) of the males and females, respectively, exhibited reproductive characteristics (Fig.1). As expected, records of reproductive male and female DMs were higher in control plots, where they were not intentionally removed (21% for males and 16% for females). On average, the proportion of breeding male and female DMs in the control plots was at 23% and 18%, respectively.    
 
 ```{r include=FALSE}
 ####load packages####
@@ -57,7 +58,7 @@ library(tidyr)
 library(lubridate)
 library(portalr)
 library(ggplot2)
-
+library(ggpubr)
 ####load cleaned individual-level data####
 Portal_data_indiv=summarize_individual_rodents(
   path = "repo",
@@ -291,17 +292,66 @@ ppt=weather(level="monthly")%>%select(year,month,precipitation)
 
 all_prod=right_join(prod2,all_sp)
 all_prod_ppt=right_join(ppt, all_prod)
-write.csv(all_prod_ppt, "all_full_prod.csv")
+#write.csv(all_prod_ppt, "all_full_prod.csv")
 
+pb_plot=all_prod_ppt%>%filter(species=="PB")
+pp_plot=all_prod_ppt%>%filter(species=="PP")
+dm_plot=all_prod_ppt%>%filter(species=="DM")
+```
+
+```{r include=FALSE}
+pbmc=pb_plot%>%filter(sex=="female", treatment=="exclosure")
+sum(pbmc$abundance)
+sum(pbmc$reproductive)
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+tab1=read.csv("./ReproData/tab1.csv")
+
+tab1%>%ggplot(aes(x = species, y = percentage, colour = treatment)) +
+  geom_boxplot(notch = TRUE) +
+  facet_wrap(~sex) +
+  labs(x = 'species', y = 'proportion (%)') +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+```   
+
+**Fig.1** Breeding intensity of male and female Merriam's kangaroo rat(DO), Bailey's pocket mouse (PB), and desert pocket mouse (PP) in control and exlosure plots.
+
+*Reproductive phenophases of representative species*  
+(first derivatives for the seasonal effects)
+
+```{r warning=FALSE, message= FALSE, echo=FALSE}
+tmpf <- tempfile()
+download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",tmpf)
+source(tmpf)
+
+want=seq(1, nrow(PB_male_ex), length.out = 200)
+pdat2=with(PB_male_con, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], precipitation=precipitation[want]))
+p3=predict(m4, newdata=pdat2, type="terms", se.fit = TRUE)
+pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
+
+df.res=df.residual(m4)
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
+
+Term <- "month"
+m4.d <- Deriv(m4)
+m4.dci <- confint(m4.d, term = Term)
+m4.dsig <- signifD(pdat2$p3, d = m4.d[[Term]]$deriv,
+                     +m4.dci[[Term]]$upper, m4.dci[[Term]]$lower)
+
+plot.Deriv(m4.d, sizer =T)
+mean(m4.dsig$decr, na.rm=T)
 ```
 
 ```{r warning=FALSE, message=FALSE, echo=FALSE}
 
 #visualization####
-pb_plot=all_prod_ppt%>%filter(species=="PB")
-pp_plot=all_prod_ppt%>%filter(species=="PP")
-dm_plot=all_prod_ppt%>%filter(species=="DM")
-
 ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
   geom_point() +
   ylab("P(breeding)")+
@@ -314,11 +364,7 @@ ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.background = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-```   
 
-**Fig.1.** Reproductive phenophase of female (left panel) and male (right panel) Bailey's pocket mouse (*C. baileyi*) in control and exclosure plots from 1996 to 2019.  
-
-```{r warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
   geom_point() +
   ylab("P(breeding)")+
@@ -331,11 +377,7 @@ ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.background = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-```  
 
-**Fig.2.** Reproductive phenophase of female (left panel) and male (right panel) desert pocket mouse (*C. penicillatus*) in control and exclosure plots from 1977 to 2019.
-
-```{r warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
   geom_point() +
   ylab("P(breeding)")+
@@ -348,14 +390,13 @@ ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.background = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-```   
 
-**Fig.3.** Reproductive phenophase of female (left panel) and male (right panel) Merriam's kangaroo rat (*D. merriami*) in control and exclosure plots from 1977 to 2019.    
 
-*Reproductive phenophases of representative species*  
-(first derivatives for the seasonal effects)
+```  
 
-*Context-dependent relationships between variables and proportion of breeding individuals*  
+**Fig.2.** Reproductive phenophase of female (top left panel) and male (top right panel) Bailey's pocket mouse (*C. baileyi*), male (mid left panel) and female (mid right panel) desert pocket mouse (*C. penicillatus*), and male (bottom left panel) and female (bootm right panel) Merriam's kangaroo rat (*D. merriami*) in control and exclosure plots from 1977 to 2019.  
+
+*Context-dependent relationships between abiotic variables and proportion of breeding individuals*  
 
 *Bailey's pocket mouse*- We found a significant non-linear relationship in the smooth terms for the seasonal trends (i.e., month) of male PBs in control plots (edf=4.26, *p*<0.05; Fig.4). Long-term trends (i.e., year) and NDVI showed non-linear relationships with the proportion of breeding males but were not significant (year:edf=2.03,*p*=0.07; NDVI: edf=2.96, *p*=0.08). The proportion of breeding male PBs in control plots exhibited a linear relationship with precipitation (edf=1, *p*=0.01). Moreover, the proportion of breeding male PBs in exclosure plots exhibited significant non-linear relationships with the smooth terms for the seasonal trends (edf=3.95, *p*<0.05; Fig. 5), long-term trends (edf=4.17, *p*<0.05), and precipitation (edf=3.16, *p*=0.02). NDVI exhibited non-linear and non-significant relationships with the proportion of breeding male PBs in the exclosures (edf=1.3, *p*=0.83).  
 
@@ -379,6 +420,7 @@ summary(m2)
 summary(m3)
 summary(m4)
 ```  
+
 ```{r echo=FALSE}
 plot(m1_bin, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
 ```
@@ -424,7 +466,7 @@ summary(m8)
 The proportion of female PPs in control plots exhibited significant non-linear seasonal (edf=4.97, *p*<0.05) and long-term trends (edf=2.85, *p*<0.05; Fig.10). The response variable also ehibited significant non-linear relationships with NDVI (edf=7.14, *p*<0.05) and precipitation (edf=5.54, *p*=0.01). Similarly, the seasonal (edf=5.26, *p*<0.05) and long-term trends (edf=2.53, *p*<0.05) of the proportion of breeding female PPs in exclosure plots were significantly non-linear (Fig.11). NDVI also exhibited significant non-linear relationship with the response variable (edf=6.13, *p*<0.05). Finally, precipitation exhibited non-significant linear relationship with the proportion of breeding female PPs in exclosures (edf=1.00, *p*=0.36).  
 
 ```{r echo=FALSE}
-plot(m5, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+plot(m8, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
 ```
 
 **Fig.8.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male desert pocket mouse (*C. penicillatus*) in control plots, from 1977 to 2019.   
@@ -449,10 +491,13 @@ plot(m8, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
 ```{r warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
 DM_male_con=dm_plot%>%filter(treatment=="control", sex=="male")
 DM_female_con=dm_plot%>%filter(treatment=="control", sex=="female")
+DM_male_ex=dm_plot%>%filter(treatment=="exclosure", sex=="male")
+DM_female_ex=dm_plot%>%filter(treatment=="exclosure", sex=="female")
 
 m9=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_male_con, method = 'REML', weights = abundance, family = binomial)
 m10=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_female_con, method = 'REML', weights = abundance, family = binomial)
-
+m11=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_male_ex, method = 'REML', weights = abundance, family = binomial)
+m12=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_female_ex, method = 'REML', weights = abundance, family = binomial)
 summary(m9)
 summary(m10)
 ```    
@@ -465,7 +510,7 @@ plot(m9, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
 **Fig.12.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male Merriam's kangaroo rat (*Dipodomys merriami*) in control plots, from 1977 to 2019.  
 
 ```{r echo=FALSE}
-plot(m10, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+plot(m12, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
 ```
 
 **Fig.13.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive female Merriam's kangaroo rat (*Dipodomys merriami*) in control plots, from 1977 to 2019.
