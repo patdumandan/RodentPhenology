@@ -27,7 +27,7 @@ Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
 
 #create full dataset without removal plots
 portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
-  filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  filter(!(treatment=="removal")| !is.na(treatment)| !is.na(sex))%>%
   mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
                                            "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
                                            "10"="Oct","11"="Nov", "12"="Dec"))%>%
