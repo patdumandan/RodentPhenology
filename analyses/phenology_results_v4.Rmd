@@ -21,7 +21,6 @@ source(tmpf)
 ``` {r warning=FALSE, message=FALSE, include=FALSE}
 #LOAD INDIVIDUAL LEVEL-DATA
 Portal_data_indiv=summarize_individual_rodents(
-  path = "repo",
   clean = TRUE,
   type = "Rodents",
   length = "all",
@@ -32,7 +31,7 @@ Portal_data_indiv=summarize_individual_rodents(
   min_traps = 1,
   download_if_missing = TRUE,
   quiet = FALSE
-)%>%filter(!(treatment=="removal"), !is.na(treatment), !is.na(sex))
+)%>%filter(!is.na(sex),!(treatment=="spectabs"), !(year<1988), !(year>2014), plot %in%c(1, 2, 4, 8, 9, 11, 12, 14, 17, 22,3, 6, 13, 15, 18, 19, 20, 21))
 
 #PB DATASET####
 
@@ -45,17 +44,16 @@ repro_male=portal_male%>%
   filter(testes==c("S", "M", "R"))
 
 PB=repro_male%>%
-  filter(species=="PB", wgt >=16)
+  filter(species=="PB", wgt>=16)
 
 #get count of reproductive males per month per year per trt
 pb_dat=PB%>%
-  filter(!(treatment=="spectabs"))%>%
   group_by(month, year, treatment)%>%
   summarise(reproductive=n())
 
 #get total observed abundance for MALES per month per year per trt
 total_PB=portal_male%>%
-  filter(species=="PB",!(treatment=="spectabs"))%>%
+  filter(species=="PB")%>%
   group_by(month,year, treatment)%>%
   summarise(abundance=n())
 
@@ -76,18 +74,16 @@ repro_female=portal_female%>%
   filter(vagina==c("S", "P", "B")| pregnant=="P" | nipples==c("R", "E", "B") | lactation=="L")
 
 PBf=repro_female%>%
-  filter(species=="PB", wgt >=21)%>%
-  arrange(wgt)
+  filter(species=="PB", wgt >=21)
 
 #get count of reproductive males per month per year per trt
 pbf_dat=PBf%>%
-  filter(!(treatment=="spectabs"))%>%
   group_by(month, year, treatment)%>%
   summarise(reproductive=n())
 
 #get total observed abundance for each species per month per year per trt
 total_PBf=portal_female%>%
-  filter(species=="PB",!(treatment=="spectabs"))%>%
+  filter(species=="PB")%>%
   group_by(month,year, treatment)%>%
   summarise(abundance=n())
 
@@ -103,17 +99,16 @@ total_proportion_pb_f[is.na(total_proportion_pb_f)] <- 0 #set non-detects to 0
 
 #males####
 PP=repro_male%>%
-  filter(species=="PP", wgt>=10)
+  filter(species=="PP", wgt >=10)
 
 #get count of reproductive males per month per year per trt
 PP_dat=PP%>%
-  filter(!(treatment=="spectabs"))%>%
   group_by(month, year, treatment)%>%
   summarise(reproductive=n())
 
 #get total observed abundance for MALES per month per year per trt
 total_PP=portal_male%>%
-  filter(species=="PP",!(treatment=="spectabs"))%>%
+  filter(species=="PP")%>%
   group_by(month,year, treatment)%>%
   summarise(abundance=n())
 
@@ -128,17 +123,16 @@ total_proportion_pp_m[is.na(total_proportion_pp_m)] <- 0 #set non-detects to 0
 #females####
 
 PPf=repro_female%>%
-  filter(species=="PP", wgt >=11)
+  filter(species=="PP", wgt >=12)
 
 #get count of reproductive males per month per year per trt
 PPf_dat=PPf%>%
-  filter(!(treatment=="spectabs"))%>%
   group_by(month, year, treatment)%>%
   summarise(reproductive=n())
 
 #get total observed abundance for each species per month per year per trt
 total_PPf=portal_female%>%
-  filter(species=="PP",!(treatment=="spectabs"))%>%
+  filter(species=="PP")%>%
   group_by(month,year, treatment)%>%
   summarise(abundance=n())
 
@@ -159,13 +153,12 @@ DM=repro_male%>%
 
 #get count of reproductive males per month per year per trt
 DM_dat=DM%>%
-  filter(!(treatment=="spectabs"))%>%
   group_by(month, year, treatment)%>%
   summarise(reproductive=n())
 
 #get total observed abundance for MALES per month per year per trt
 total_DM=portal_male%>%
-  filter(species=="DM",!(treatment=="spectabs"))%>%
+  filter(species=="DM")%>%
   group_by(month,year, treatment)%>%
   summarise(abundance=n())
 
@@ -180,17 +173,16 @@ total_proportion_dm_m[is.na(total_proportion_dm_m)] <- 0 #set non-detects to 0
 #females####
 
 DMf=repro_female%>%
-  filter(species=="DM", wgt>=25)
+  filter(species=="DM", wgt >=27)
 
 #get count of reproductive males per month per year per trt
 DMf_dat=DMf%>%
-  filter(!(treatment=="spectabs"))%>%
   group_by(month, year, treatment)%>%
   summarise(reproductive=n())
 
 #get total observed abundance for each species per month per year per trt
 total_DMf=portal_female%>%
-  filter(species=="DM",!(treatment=="spectabs"))%>%
+  filter(species=="DM")%>%
   group_by(month,year, treatment)%>%
   summarise(abundance=n())
 
@@ -220,7 +212,7 @@ all_sp=rbind(PB_all, PP_all, DM_all)
 
 #add ndvi and precip monthly data####
 
-prod=ndvi(level="monthly", sensor="gimms", fill=TRUE)
+prod=ndvi(level="monthly", sensor="landsat", fill=TRUE)
 
 prod2=prod%>%
   mutate(year=year(date), month=month(date))
@@ -232,22 +224,21 @@ all_prod_ppt=right_join(ppt, all_prod)%>%filter(!is.na(precipitation), !is.na(nd
 
 #add biomass data####
 bmass=biomass(path="repo", level="Plot", type="Rodents",
-              clean=TRUE, plots="all", time="date", shape="crosstab")
+              clean=TRUE, plots="all", time="date", shape="crosstab")%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+   filter(!(year<1988), !(year>2014), !(treatment=="spectabs"), plot%in%c(1, 2, 4, 8, 9, 11, 12, 14, 17, 22,3, 6, 13, 15, 18, 19, 20, 21))
 
 DM_bmass=bmass%>%select(DM, plot, treatment, censusdate)%>%
-  filter(!(treatment%in%c("removal", "spectabs")))%>%
   mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
   group_by(month, year, treatment)%>%
   summarise(bmass_DM=sum(DM))
 
 PB_bmass=bmass%>%select(PB, plot, treatment, censusdate)%>%
-  filter(!(treatment%in%c("removal", "spectabs")))%>%
   mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
   group_by(month, year, treatment)%>%
   summarise(bmass_PB=sum(PB))
 
 PP_bmass=bmass%>%select(PP, plot, treatment, censusdate)%>%
-  filter(!(treatment%in%c("removal", "spectabs")))%>%
   mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
   group_by(month, year, treatment)%>%
   summarise(bmass_PP=sum(PP))
@@ -261,6 +252,19 @@ pb_plot=all3_bmass%>%filter(species=="PB")
 pp_plot=all3_bmass%>%filter(species=="PP")
 dm_plot=all3_bmass%>%filter(species=="DM")
 ```
+
+```{r include=FALSE}
+#1. proportion
+#total breeders/total abundance
+
+#2. proportion of males and females in control vs exclosure
+#total repro M (or F) in control(or exclosure)/total M (or F) in control and exclosure
+
+
+#3. proportion of males vs females
+# total repro M(or F) in control (or exclosure)/ total repro M and F in control (or exclosure)
+
+```  
 
 ### PB MODELS 
 
@@ -278,19 +282,19 @@ PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
 m1=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
                    , data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m1) #R2=45.4%
+summary(m1) #R2=28.1%
 
 #add effect of DM biomass
 m1_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)
                    , data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m1_bmass) #R2=42.9%
+summary(m1_bmass) #R2=31.7%
 
 #add effect of DM biomass AND intraspecific competition (PB)
 m1_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                   s(bmass_PB), data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
+                   s(bmass_PB)+s(bmass_PP), data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m1_bmass2) #R2=49.7%
+summary(m1_bmass2) #R2=35.7%
 
 ```
 
@@ -305,7 +309,7 @@ Fig.1. Partial effects plot of the relationships between different predictor var
 want=seq(1, nrow(PB_male_con), length.out = 200)
 pdat2=with(PB_male_con, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], 
                                    precipitation=precipitation[want], bmass_DM=bmass_DM[want],
-                                   bmass_PB=bmass_PB[want]))
+                                   bmass_PB=bmass_PB[want], bmass_PP=bmass_PP[want]))
 p3=predict(m1_bmass2, newdata=pdat2, type="terms", se.fit = TRUE)
 pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
 
@@ -319,8 +323,9 @@ Term="month"
 m1.dci <- confint(m1.d, term = Term)
 m1.dsig <- signifD(pdat2$p3, d = m1.d[[Term]]$deriv,
                    +m1.dci[[Term]]$upper, m1.dci[[Term]]$lower)
-plot.Deriv(m1.d, sizer=T, term=Term)
-abline(v=3.4, type="l", lty=2)
+plot.Deriv(m1.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=3.1, type="l", lty=2)
 
 ```  
 
@@ -336,25 +341,25 @@ Fig.2. Periods of significant change in the seasonal trends in the reproductive 
 m2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m2) #R2=31.6%
+summary(m2) #R2=35.5%
 
 #add effect of DM biomass
-m2_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)
+m2_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+s(bmass_PB)
                    , data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m2_bmass) #R2=33.1%
+summary(m2_bmass) #R2=37%
 
 #add effect of DM biomass AND intraspecific competition (PB competition)
 m2_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                      s(bmass_PB), data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
+                      s(bmass_PB)+s(bmass_PP), data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m2_bmass2) #R2=33.7%
+summary(m2_bmass2) #R2=44.9%
 ``` 
 
 ```{r message=FALSE}
 
 #best fit plot####
-plot(m2_bmass, shade=T, pages=1)
+plot(m2_bmass2, shade=T, pages=1)
 
 ```  
 
@@ -367,7 +372,7 @@ Fig.3. Partial effects plot of the relationships between different predictor var
 want=seq(1, nrow(PB_male_ex), length.out = 200)
 pdat2=with(PB_male_ex, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], 
                                    precipitation=precipitation[want], bmass_DM=bmass_DM[want],
-                                   bmass_PB=bmass_PB[want]))
+                                   bmass_PB=bmass_PB[want], bmass_PP=bmass_PP[want]))
 p3=predict(m2_bmass2, newdata=pdat2, type="terms", se.fit = TRUE)
 pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
 
@@ -381,8 +386,9 @@ Term="month"
 m2.dci <- confint(m2.d, term = Term)
 m2.dsig <- signifD(pdat2$p3, d = m2.d[[Term]]$deriv,
                    +m2.dci[[Term]]$upper, m2.dci[[Term]]$lower)
-plot.Deriv(m2.d, sizer=T, term=Term)
-abline(v=3.4, type="l", lty=2)
+plot.Deriv(m2.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=2.7, type="l", lty=2)
 ```  
 
 Fig.4. Periods of significant change in the seasonal trends in the reproductive phenology of breeding male Bailey's pocket mouse (*Chaetodipus baileyi*) in k-rat exclosure plots in a project site near Portal, Arizona. Periods of significant increase (blue) or decrease (red) are indicated by the coloured sections of the trend. Dashed vertical line indicate peak breeding period.  
@@ -394,25 +400,25 @@ Fig.4. Periods of significant change in the seasonal trends in the reproductive 
 m3=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m3) #R2=39.6%
+summary(m3) #R2=41.6%
 
 #add effect of DM biomass
-m3_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)
+m3_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+s(bmass_PB)
                    , data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m3_bmass) #R2=47%
+summary(m3_bmass) #R2=50.9%
 
 #add effect of DM biomass AND intraspecific competition (PB competition)
 m3_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                      s(bmass_PB), data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
+                      s(bmass_PB)+s(bmass_PP), data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m3_bmass2) #R2=46.6%
+summary(m3_bmass2) #R2=58.9%
 ```  
 
 ```{r message=FALSE}
 
 #best fit plot####
-plot(m3_bmass, shade=T, pages=1)
+plot(m3_bmass2, shade=T, pages=1)
 ```  
 
 Fig.5. Partial effects plot of the relationships between different predictor variables and the proportion of breeding female PBs in control plots estimated using a generalized additive model (GAM).  
@@ -421,8 +427,8 @@ Fig.5. Partial effects plot of the relationships between different predictor var
 want=seq(1, nrow(PB_female_con), length.out = 200)
 pdat2=with(PB_female_con, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], 
                                   precipitation=precipitation[want], bmass_DM=bmass_DM[want],
-                                  bmass_PB=bmass_PB[want]))
-p3=predict(m3_bmass, newdata=pdat2, type="terms", se.fit = TRUE)
+                                  bmass_PB=bmass_PB[want], bmass_PP=bmass_PP[want]))
+p3=predict(m3_bmass2, newdata=pdat2, type="terms", se.fit = TRUE)
 pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
 
 df.res=df.residual(m3_bmass)
@@ -430,13 +436,14 @@ df.res=df.residual(m3_bmass)
 crit.t=qt(0.025, df.res, lower.tail = F)
 pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
 
-m3.d <- Deriv(m3_bmass)
+m3.d <- Deriv(m3_bmass2)
 Term="month"
 m3.dci <- confint(m3.d, term = Term)
 m3.dsig <- signifD(pdat2$p3, d = m3.d[[Term]]$deriv,
                    +m3.dci[[Term]]$upper, m3.dci[[Term]]$lower)
-plot.Deriv(m3.d, sizer=T, term=Term)
-abline(v=4.3, type="l", lty=2)
+plot.Deriv(m3.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=4.2, type="l", lty=2)
 
 ```  
 
@@ -449,24 +456,24 @@ Fig.6. Periods of significant change in the seasonal trends in the reproductive 
 m4=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m4) #R2=45.1%
+summary(m4) #R2=53.5%
 
 #add effect of DM biomass
-m4_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)
+m4_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+s(bmass_PB)
                    , data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m4_bmass) #R2=49.1%
+summary(m4_bmass) #R2=55%
 
 #add effect of DM biomass AND intraspecific competition (PB competition)
 m4_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                      s(bmass_PB), data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
+                      s(bmass_PB)+s(bmass_PP), data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m4_bmass2) #R2=49.2%
+summary(m4_bmass2) #R2=68.3%
 ```  
 
 ```{r message=FALSE, echo=FALSE}
 #best fit plot####
-plot(m4_bmass, shade=T, pages=1)
+plot(m4_bmass2, shade=T, pages=1)
 ```  
 
 Fig.7. Partial effects plot of the relationships between different predictor variables and the proportion of breeding female PBs in k-rat exclosure plots estimated using a generalized additive model (GAM).  
@@ -477,22 +484,23 @@ Fig.7. Partial effects plot of the relationships between different predictor var
 want=seq(1, nrow(PB_female_ex), length.out = 200)
 pdat2=with(PB_female_ex, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], 
                                   precipitation=precipitation[want], bmass_DM=bmass_DM[want],
-                                  bmass_PB=bmass_PB[want]))
+                                  bmass_PB=bmass_PB[want], bmass_PP=bmass_PP[want]))
 p3=predict(m4_bmass, newdata=pdat2, type="terms", se.fit = TRUE)
 pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
 
-df.res=df.residual(m4_bmass)
+df.res=df.residual(m4_bmass2)
 
 crit.t=qt(0.025, df.res, lower.tail = F)
 pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
 
-m4.d <- Deriv(m4_bmass)
+m4.d <- Deriv(m4_bmass2)
 Term="month"
 m4.dci <- confint(m4.d, term = Term)
 m4.dsig <- signifD(pdat2$p3, d = m4.d[[Term]]$deriv,
                    +m4.dci[[Term]]$upper, m4.dci[[Term]]$lower)
-plot.Deriv(m4.d, sizer=T, term=Term)
-abline(v=4.2, type="l", lty=2)
+plot.Deriv(m4.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=4.7, type="l", lty=2)
 
 ```  
 
@@ -512,20 +520,20 @@ PP_female_ex=pp_plot%>%filter(treatment=="exclosure", sex=="female")
 m5=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PP_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m5) #R2=54.8%
+summary(m5) #R2=54.5%
 
 #add effect of DM+PB biomass
 m5_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                      s(bmass_PB),
                    data=PP_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m5_bmass) #R2=55.1%
+summary(m5_bmass) #R2=54.8%
 
 #add effect of DM+PB biomass AND intraspecific competition (PP competition)
 m5_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                       s(bmass_PB)+s(bmass_PP), data=PP_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m5_bmass2) #R2=56.8%
+summary(m5_bmass2) #R2=55.7%
 ```  
 
 ```{r message=FALSE, echo=FALSE}
@@ -554,8 +562,9 @@ Term="month"
 m5.dci <- confint(m5.d, term = Term)
 m5.dsig <- signifD(pdat2$p3, d = m5.d[[Term]]$deriv,
                    +m5.dci[[Term]]$upper, m5.dci[[Term]]$lower)
-plot.Deriv(m5.d, sizer=T, term=Term)
-abline(v=3.3, type="l", lty=2)
+plot.Deriv(m5.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=4.5, type="l", lty=2)
 
 ```  
 
@@ -568,27 +577,27 @@ Fig.10. Periods of significant change in the seasonal trends in the reproductive
 m6=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PP_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m6) #R2=55.5%
+summary(m6) #R2=59.6%
 
 #add effect of DM+PB biomass
 m6_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                      s(bmass_PB),
                    data=PP_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m6_bmass) #R2=55.9%
+summary(m6_bmass) #R2=61.2%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m6_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                       s(bmass_PB)+s(bmass_PP), data=PP_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m6_bmass2) #R2=57.4%
+summary(m6_bmass2) #R2=61%
 ```    
 **FOR DISCUSSION WITH MORGAN**: As in male and female PPs in exclosure, not really best fit model chosen
 
 ```{r message=FALSE, echo=FALSE}
 
 #best fit plot####
-plot(m6_bmass, shade=T, pages=1)
+plot(m6_bmass2, shade=T, pages=1)
 ```  
 
 Fig.11. Partial effects plot of the relationships between different predictor variables and the proportion of breeding male PPs in k-rat exclosure plots estimated using a generalized additive model (GAM).  
@@ -612,7 +621,8 @@ Term="month"
 m6.dci <- confint(m6.d, term = Term)
 m6.dsig <- signifD(pdat2$p3, d = m6.d[[Term]]$deriv,
                    +m6.dci[[Term]]$upper, m6.dci[[Term]]$lower)
-plot.Deriv(m6.d, sizer=T, term=Term)
+plot.Deriv(m6.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 abline(v=4.1, type="l", lty=2)
 ```  
 
@@ -625,20 +635,20 @@ Fig.12. Periods of significant change in the seasonal trends in the reproductive
 m7=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PP_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m7) #R2=41.1%
+summary(m7) #R2=51.9%
 
 #add effect of DM+PB biomass
 m7_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                      s(bmass_PB),
                    data=PP_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m7_bmass) #R2=43.4%
+summary(m7_bmass) #R2=58.2%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m7_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                       s(bmass_PB)+s(bmass_PP), data=PP_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m7_bmass2) #R2=46.6% 
+summary(m7_bmass2) #R2=63.9% 
 ```  
 
 ```{r message=FALSE, echo=FALSE}
@@ -666,8 +676,9 @@ Term="month"
 m7.dci <- confint(m7.d, term = Term)
 m7.dsig <- signifD(pdat2$p3, d = m7.d[[Term]]$deriv,
                    +m7.dci[[Term]]$upper, m7.dci[[Term]]$lower)
-plot.Deriv(m7.d, sizer=T, term=Term)
-abline(v=5, type="l", lty=2)
+plot.Deriv(m7.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=5.1, type="l", lty=2)
 ```  
 
 Fig.14. Periods of significant change in the seasonal trends in the reproductive phenology of breeding female desert pocket mouse (*C. penicillatus*) in control plots in a project site near Portal, Arizona. Periods of significant increase (blue) or decrease (red) are indicated by the coloured sections of the trend. Dashed vertical line indicate peak breeding period. 
@@ -679,26 +690,26 @@ Fig.14. Periods of significant change in the seasonal trends in the reproductive
 m8=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=PP_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m8) #R2=35%
+summary(m8) #R2=46.5%
 
 #add effect of DM+PB biomass
 m8_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                      s(bmass_PB),
                    data=PP_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m8_bmass) #R2=42.9%
+summary(m8_bmass) #R2=60%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m8_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                       s(bmass_PB)+s(bmass_PP), data=PP_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m8_bmass2) #R2=44.2%
+summary(m8_bmass2) #R2=61.7%
 ```
 
 ```{r message=FALSE, echo=FALSE}  
 
 #best fit plot####
-plot(m8_bmass, shade=T, pages=1)
+plot(m8_bmass2, shade=T, pages=1)
 ```  
 
 Fig.15. Partial effects plot of the relationships between different predictor variables and the proportion of breeding female PPs in k-rat exclosure plots estimated using a generalized additive model (GAM).
@@ -708,7 +719,7 @@ want=seq(1, nrow(PP_female_ex), length.out = 200)
 pdat2=with(PP_female_ex, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], 
                                      precipitation=precipitation[want], bmass_DM=bmass_DM[want],
                                      bmass_PB=bmass_PB[want],bmass_PP= bmass_PP[want]))
-p3=predict(m8_bmass, newdata=pdat2, type="terms", se.fit = TRUE)
+p3=predict(m8_bmass2, newdata=pdat2, type="terms", se.fit = TRUE)
 pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
 
 df.res=df.residual(m8_bmass)
@@ -716,13 +727,14 @@ df.res=df.residual(m8_bmass)
 crit.t=qt(0.025, df.res, lower.tail = F)
 pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
 
-m8.d <- Deriv(m8_bmass)
+m8.d <- Deriv(m8_bmass2)
 Term="month"
 m8.dci <- confint(m8.d, term = Term)
 m8.dsig <- signifD(pdat2$p3, d = m8.d[[Term]]$deriv,
                    +m8.dci[[Term]]$upper, m8.dci[[Term]]$lower)
-plot.Deriv(m8.d, sizer=T, term=Term)
-abline(v=5.1, type="l", lty=2)
+plot.Deriv(m8.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=5.3, type="l", lty=2)
 
 ```  
 
@@ -744,20 +756,20 @@ DM_female_ex=dm_plot%>%filter(treatment=="exclosure", sex=="female")
 m9=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=DM_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m9) #R2=12.9%
+summary(m9) #R2=18.4%
 
 #add effect of DM+PB biomass
-m9_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                     s(bmass_PB),
+m9_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+
+                     s(bmass_PB)+s(bmass_PP),
                    data=DM_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m9_bmass) #R2=13.7%
+summary(m9_bmass) #R2=21%
 
 #add effect of DM+PB biomass AND intraspecific competition (PP competition)
 m9_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                       s(bmass_PB)+s(bmass_PP), data=DM_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m9_bmass2) #R2=16.5%
+summary(m9_bmass2) #R2=22.1%
 ```  
 **FOR DISCUSSION WITH MORGAN**: The DM models seem exhibit poor explanatory performance (<20% deviance explained for the best fit model). best fit shows DM and PP biomass influences P(breeding males), which is contrary to our hypothesis given DM's low density-dependence population regulation (also, with a lesser competitor). so I'm pretty skeptical about this result  
 
@@ -787,8 +799,9 @@ Term="month"
 m9.dci <- confint(m9.d, term = Term)
 m9.dsig <- signifD(pdat2$p3, d = m9.d[[Term]]$deriv,
                    +m9.dci[[Term]]$upper, m9.dci[[Term]]$lower)
-plot.Deriv(m9.d, sizer=T, term=Term)
-abline(v=3.3, type="l", lty=2)
+plot.Deriv(m9.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=3.8, type="l", lty=2)
 
 ```  
 
@@ -801,20 +814,20 @@ Fig.18. Periods of significant change in the seasonal trends in the reproductive
 m10=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
              , data=DM_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m10) #R2=28.7%
+summary(m10) #R2=39.1%
 
 #add effect of DM+PB biomass
 m10_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                      s(bmass_PB),
                    data=DM_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m10_bmass) #R2=29.3%
+summary(m10_bmass) #R2=42.6%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m10_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
                       s(bmass_PB)+s(bmass_PP), data=DM_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m10_bmass2) #R2=35.4%
+summary(m10_bmass2) #R2=47.8%
 ```
 **FOR DISCUSSION WITH MORGAN**: Not as terrible explanatory performance as DM males but surprising results: significant effect of PB and PP biomass on breeding females DMs  
 
@@ -843,8 +856,9 @@ Term="month"
 m10.dci <- confint(m10.d, term = Term)
 m10.dsig <- signifD(pdat2$p3, d = m10.d[[Term]]$deriv,
                    +m10.dci[[Term]]$upper, m10.dci[[Term]]$lower)
-plot.Deriv(m10.d, sizer=T, term=Term)
-abline(v=4.2, type="l", lty=2)
+plot.Deriv(m10.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=4.7, type="l", lty=2)
 ```  
 
 Fig.20. Periods of significant change in the seasonal trends in the reproductive phenology of breeding female kangaroo rat (*Dipodomys merriami*) in control plots in a project site near Portal, Arizona. Periods of significant increase (blue) or decrease (red) are indicated by the coloured sections of the trend. Dashed vertical line indicate peak breeding period. 
