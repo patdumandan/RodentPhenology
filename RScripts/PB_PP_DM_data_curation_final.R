@@ -4,29 +4,34 @@ library(dplyr)
 library(tidyr)
 library(portalr)
 library(ggplot2)
+library(lubridate)
 
 ####load cleaned individual-level data####
 Portal_data_indiv=summarize_individual_rodents(
-  path = "repo",
   clean = TRUE,
   type = "Rodents",
   length = "all",
   unknowns = FALSE,
-  time = "date",
   fillweight = FALSE,
   min_plots = 1,
   min_traps = 1,
   download_if_missing = TRUE,
   quiet = FALSE
-)%>%filter(!(treatment=="removal"), !is.na(treatment), !is.na(sex))
+)%>%filter(!is.na(sex),!(treatment=="spectabs"), !(year<1988), !(year>2014), 
+           plot %in%c(1, 2, 4, 8, 9, 11, 12, 14, 17, 22,3, 6, 13, 15, 18, 19, 20, 21))
 
-write.csv(Portal_data_indiv, "Portal_repro.csv")
+#find and remove bad periods (periods with only one day of trapping)###
+tdat=Portal_rodent_trapping%>%group_by(period)%>%summarise(count=sum(sampled))%>%arrange(count)
+bad_periods <- filter(tdat, count < 20)
+bad_periods <- as.list(bad_periods$period)
+
+Portal_no_badperiod=Portal_data_indiv[-which(Portal_data_indiv$period %in%bad_periods),]
 
 #PB DATASET####
 
 #males####
 
-portal_male=Portal_data_indiv%>%filter(sex=="M") 
+portal_male=Portal_no_badperiod%>%filter(sex=="M") 
 head(portal_male)
 
 repro_male=portal_male%>%
@@ -68,7 +73,7 @@ ggplot(total_proportion, aes(y=proportion, x=month, col=treatment)) +
 
 #females####
 
-portal_female=Portal_data_indiv%>%filter(sex=="F") #49% of individuals are males
+portal_female=Portal_no_badperiod%>%filter(sex=="F") #49% of individuals are males
 head(portal_male)
 
 repro_female=portal_female%>%
@@ -117,7 +122,7 @@ PB_all=as.data.frame(PB_all)%>%
 
 #males####
 
-portal_male=Portal_data_indiv%>%filter(sex=="M") 
+portal_male=Portal_no_badperiod%>%filter(sex=="M") 
 head(portal_male)
 
 repro_male=portal_male%>%
@@ -159,7 +164,7 @@ ggplot(total_proportion_pp_m, aes(y=proportion, x=month, col=treatment)) +
 
 #females####
 
-portal_female=Portal_data_indiv%>%filter(sex=="F") #49% of individuals are males
+portal_female=Portal_no_badperiod%>%filter(sex=="F") #49% of individuals are males
 head(portal_male)
 
 repro_female=portal_female%>%
@@ -207,7 +212,7 @@ PP_all=as.data.frame(PP_all)%>%
 
 #males####
 
-portal_male=Portal_data_indiv%>%filter(sex=="M") 
+portal_male=Portal_no_badperiod%>%filter(sex=="M") 
 head(portal_male)
 
 repro_male=portal_male%>%
@@ -249,7 +254,7 @@ ggplot(total_proportion_dm_m, aes(y=proportion, x=month, col=treatment)) +
 
 #females####
 
-portal_female=Portal_data_indiv%>%filter(sex=="F") #49% of individuals are males
+portal_female=Portal_no_badperiod%>%filter(sex=="F") #49% of individuals are males
 head(portal_male)
 
 repro_female=portal_female%>%
@@ -298,20 +303,49 @@ all_sp=rbind(PB_all, PP_all, DM_all)
 
 #add ndvi and ppt monthly data####
 
-prod=ndvi(level="monthly")
+prod=ndvi(level="monthly", sensor="gimms", fill=TRUE)
 
 prod2=prod%>%
   mutate(year=year(date), month=month(date))
-ppt=weather(level="monthly")%>%select(year,month,precipitation)
+ppt=weather(level="monthly", fill=TRUE)%>%select(year,month,precipitation)
 
 all_prod=right_join(prod2,all_sp)
-all_prod_ppt=right_join(ppt, all_sp)
-write.csv(all_prod_ppt, "all_full_prod.csv")
+all_prod_ppt=right_join(ppt, all_prod)%>%filter(!is.na(precipitation), !is.na(ndvi))
+#write.csv(all_prod_ppt, "all_full_prod.csv")
+
+#add biomass data####
+bmass=biomass(path="repo", level="Plot", type="Rodents",
+              clean=TRUE, plots="all", time="date", shape="crosstab")
+
+
+DM_bmass=bmass%>%select(DM, plot, treatment, censusdate)%>%
+  filter(!(treatment%in%c("removal", "spectabs")))%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+  group_by(month, year, treatment)%>%
+  summarise(bmass_DM=sum(DM))
+
+PB_bmass=bmass%>%select(PB, plot, treatment, censusdate)%>%
+  filter(!(treatment%in%c("removal", "spectabs")))%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+  group_by(month, year, treatment)%>%
+  summarise(bmass_PB=sum(PB))
+
+PP_bmass=bmass%>%select(PP, plot, treatment, censusdate)%>%
+  filter(!(treatment%in%c("removal", "spectabs")))%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+  group_by(month, year, treatment)%>%
+  summarise(bmass_PP=sum(PP))
+
+all_bmass=left_join(all_prod_ppt, DM_bmass, by=c("month", "year", "treatment"))
+all2_bmass=left_join(all_bmass, PB_bmass, by=c("month", "year", "treatment"))
+all3_bmass=left_join(all2_bmass, PP_bmass, by=c("month", "year", "treatment"))%>%
+  filter(!is.na(bmass_DM), !is.na(bmass_PB), !is.na(bmass_PP))
+
 
 #visualization####
-pb_plot=all_prod_ppt%>%filter(species=="PB")
-pp_plot=all_prod_ppt%>%filter(species=="PP")
-dm_plot=all_prod_ppt%>%filter(species=="DM")
+pb_plot=all3_bmass%>%filter(species=="PB")
+pp_plot=all3_bmass%>%filter(species=="PP")
+dm_plot=all3_bmass%>%filter(species=="DM")
 
 ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
   geom_point() +
