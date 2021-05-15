@@ -580,11 +580,10 @@ m6=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
 summary(m6) #R2=59.6%
 
 #add effect of DM+PB biomass
-m6_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                     s(bmass_PB),
+m6_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_PP),
                    data=PP_male_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m6_bmass) #R2=61.2%
+summary(m6_bmass) #R2=59.4%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m6_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
@@ -638,11 +637,10 @@ m7=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
 summary(m7) #R2=51.9%
 
 #add effect of DM+PB biomass
-m7_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                     s(bmass_PB),
+m7_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_PP),
                    data=PP_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m7_bmass) #R2=58.2%
+summary(m7_bmass) #R2=52.8%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m7_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
@@ -693,11 +691,10 @@ m8=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
 summary(m8) #R2=46.5%
 
 #add effect of DM+PB biomass
-m8_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                     s(bmass_PB),
+m8_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_PP),
                    data=PP_female_ex, method = 'REML', weights = abundance, family = binomial)
 
-summary(m8_bmass) #R2=60%
+summary(m8_bmass) #R2=52.4%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m8_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
@@ -760,10 +757,10 @@ summary(m9) #R2=18.4%
 
 #add effect of DM+PB biomass
 m9_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+
-                     s(bmass_PB)+s(bmass_PP),
+                     s(bmass_DM),
                    data=DM_male_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m9_bmass) #R2=21%
+summary(m9_bmass) #R2=19.2%
 
 #add effect of DM+PB biomass AND intraspecific competition (PP competition)
 m9_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
@@ -817,11 +814,10 @@ m10=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation
 summary(m10) #R2=39.1%
 
 #add effect of DM+PB biomass
-m10_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                     s(bmass_PB),
+m10_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM),
                    data=DM_female_con, method = 'REML', weights = abundance, family = binomial)
 
-summary(m10_bmass) #R2=42.6%
+summary(m10_bmass) #R2=39.1%
 
 #add effect of DM+PB biomass AND intraspecific competition (PB competition)
 m10_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
