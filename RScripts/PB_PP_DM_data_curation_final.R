@@ -5,6 +5,7 @@ library(tidyr)
 library(portalr)
 library(ggplot2)
 library(lubridate)
+library(reshape2)
 
 source("./RScripts/data_cleaning_functions_Supp.R")
 
@@ -69,15 +70,19 @@ same = same_period(no_dup, tags)
 sametags = unique(same$tag)
 Portal_no_same= no_dup[-which(no_dup$tag %in% sametags),]
 
-# remove bad data
+# "clean" data
 
 Portal_clean=subsetDat(Portal_no_same)
+
+#Note: this analysis does not necessarily follow the capture history of 
+#individuals, what we want are just the event IDs/observations of reprod.
+#characteristics to determine peak timing of breeding events
 
 #PB DATASET####
 
 #males####
 
-portal_male=dup_clean%>%filter(sex=="M", !is.na(sex), !is.na(treatment)) 
+portal_male=Portal_clean%>%filter(sex=="M", !is.na(sex), !is.na(treatment)) 
 head(portal_male)
 
 repro_male=portal_male%>%
@@ -111,7 +116,8 @@ portal_female=Portal_clean%>%filter(sex=="F") #49% of individuals are males
 head(portal_male)
 
 repro_female=portal_female%>%
-  filter(vagina==c("S", "P", "B")| pregnant=="P" | nipples==c("R", "E", "B") | lactation=="L")
+  filter(vagina==c("S", "P", "B")| pregnant=="P" | 
+           nipples==c("R", "E", "B") | lactation=="L")
 
 PBf=repro_female%>%
   filter(species=="PB", wgt >=21)%>%
@@ -160,7 +166,7 @@ total_PP=portal_male%>%
   summarise(abundance=n())
 
 #calculate proportion
-#this creates NAs for months when no reproductive male was recorded
+#this creates NAs for months when no reproductive male were recorded
 total_proportion_pp_m=right_join(PP_dat, total_PP)%>%
   mutate(proportion=reproductive/abundance, sex="male")%>%
   arrange(proportion)
@@ -271,6 +277,7 @@ prod=ndvi(level="monthly", sensor="landsat", fill=TRUE)
 
 prod2=prod%>%
   mutate(year=year(date), month=month(date))
+
 ppt=weather(level="monthly", fill=TRUE)%>%select(year,month,precipitation)
 
 all_prod=right_join(prod2,all_sp)
@@ -299,20 +306,18 @@ PP_bmass=bmass%>%select(PP, plot, treatment, censusdate)%>%
   group_by(month, year, treatment)%>%
   summarise(bmass_PP=sum(PP))
 
-all_bmass=left_join(all_prod_ppt, DM_bmass, by=c("month", "year", "treatment"))
-all2_bmass=left_join(all_bmass, PB_bmass, by=c("month", "year", "treatment"))
-all3_bmass=left_join(all2_bmass, PP_bmass, by=c("month", "year", "treatment"))%>%
-  filter(!is.na(bmass_DM), !is.na(bmass_PB), !is.na(bmass_PP))
+all_bmass1=left_join(all_prod_ppt,DM_bmass, by=c("month", "year", "treatment"))
+all_bmass2=left_join(all_bmass1,PB_bmass, by=c("month", "year", "treatment"))
+all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))
 
-# adding lags####
-weather_lagged=PB_female_con%>%
-  mutate(month=as.integer(month), lag_year=year-1,lag_month=month- 1)%>%
-  select(lag_year,lag_month, ndvi, precipitation, month)%>%
+# adding lags of weather variables####
+var_lag=all_bmass3%>%
+  mutate(month=as.integer(month), lag_month=month-1)%>%
+  select(lag_month, ndvi, precipitation, month, year)%>%
   rename(lag_ndvi=ndvi, lag_ppt=precipitation)
 
-wt=left_join(PB_female_con, weather_lagged)
-
-
+var_lag2=left_join(all_bmass3, var_lag, by=c("month"="lag_month", "year"))%>%
+  distinct()
 
 #visualization####
 pb_plot=all3_bmass%>%filter(species=="PB")
