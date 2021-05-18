@@ -6,6 +6,7 @@ library(portalr)
 library(ggplot2)
 library(lubridate)
 library(reshape2)
+library(RColorBrewer)
 
 source("./RScripts/data_cleaning_functions_Supp.R")
 
@@ -268,8 +269,112 @@ DM_all=rbind(total_proportion_dm_m, total_proportion_dm_f)
 DM_all=as.data.frame(DM_all)%>%
   mutate(species="DM")
 
+#DO DATASET####
+#males####
+DO=repro_male%>%
+  filter(species=="DO", wgt>=30)
+
+#get count of reproductive males per month per year per trt
+DO_dat=DO%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_DO=portal_male%>%
+  filter(species=="DO")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_do_m=right_join(DO_dat, total_DO)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion_do_m[is.na(total_proportion_do_m)] <- 0 #set non-detects to 0
+
+#females####
+
+DOf=repro_female%>%
+  filter(species=="DO", wgt>=28)%>%arrange(wgt)
+
+#get count of reproductive males per month per year per trt
+DOf_dat=DOf%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_DOf=portal_female%>%
+  filter(species=="DO")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_do_f=right_join(DOf_dat, total_DOf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_do_f[is.na(total_proportion_do_f)] <- 0 #set non-detects to 0
+
+DO_all=rbind(total_proportion_do_m, total_proportion_do_f)
+DO_all=as.data.frame(DO_all)%>%
+  mutate(species="DO")
+
+#DS DATASET####
+#males####
+DS=repro_male%>%
+  filter(species=="DS",wgt>=25)%>%arrange(wgt)
+
+#get count of reproductive males per month per year per trt
+DS_dat=DS%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_DS=portal_male%>%
+  filter(species=="DS")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_ds_m=right_join(DS_dat, total_DS)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion_ds_m[is.na(total_proportion_ds_m)] <- 0 #set non-detects to 0
+
+#females####
+
+DSf=repro_female%>%
+  filter(species=="DS", wgt>=78)%>%arrange(wgt)
+
+#get count of reproductive males per month per year per trt
+DSf_dat=DSf%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_DSf=portal_female%>%
+  filter(species=="DS")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_ds_f=right_join(DSf_dat, total_DSf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_ds_f[is.na(total_proportion_ds_f)] <- 0 #set non-detects to 0
+
+DS_all=rbind(total_proportion_ds_m, total_proportion_ds_f)
+DS_all=as.data.frame(DS_all)%>%
+  mutate(species="DS")
+
 #combine PB, PP and DM datasets####
-all_sp=rbind(PB_all, PP_all, DM_all)
+all_sp=rbind(PB_all, PP_all, DM_all, DO_all, DS_all)
 
 #add ndvi and ppt monthly data####
 
@@ -286,6 +391,19 @@ all_prod_ppt=right_join(ppt, all_prod)%>%filter(!is.na(precipitation), !is.na(nd
 #add biomass data####
 bmass=biomass(level="Plot", type="Rodents",
               clean=TRUE, plots="all", time="date", shape="crosstab")
+
+
+DO_bmass=bmass%>%select(DO, plot, treatment, censusdate)%>%
+  filter(!(treatment%in%c("removal", "spectabs")))%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+  group_by(month, year, treatment)%>%
+  summarise(bmass_DO=sum(DO))
+
+DS_bmass=bmass%>%select(DS, plot, treatment, censusdate)%>%
+  filter(!(treatment%in%c("removal", "spectabs")))%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+  group_by(month, year, treatment)%>%
+  summarise(bmass_DS=sum(DS))
 
 
 DM_bmass=bmass%>%select(DM, plot, treatment, censusdate)%>%
@@ -306,9 +424,12 @@ PP_bmass=bmass%>%select(PP, plot, treatment, censusdate)%>%
   group_by(month, year, treatment)%>%
   summarise(bmass_PP=sum(PP))
 
-all_bmass1=left_join(all_prod_ppt,DM_bmass, by=c("month", "year", "treatment"))
-all_bmass2=left_join(all_bmass1,PB_bmass, by=c("month", "year", "treatment"))
-all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))
+all_bmass11=left_join(all_prod_ppt,DM_bmass, by=c("month", "year", "treatment"))
+all_bmass12=left_join(all_bmass11,DO_bmass, by=c("month", "year", "treatment"))
+all_bmass13=left_join(all_bmass12,DS_bmass, by=c("month", "year", "treatment"))
+all_bmass2=left_join(all_bmass13,PB_bmass, by=c("month", "year", "treatment"))
+all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))%>%
+  mutate(DIPO_bmass=rowSums(.[12:14]))
 
 # adding lags of weather variables####
 var_lag=all_bmass3%>%
@@ -317,12 +438,22 @@ var_lag=all_bmass3%>%
   rename(lag_ndvi=ndvi, lag_ppt=precipitation)
 
 var_lag2=left_join(all_bmass3, var_lag, by=c("month"="lag_month", "year"))%>%
-  distinct()
+  distinct()%>%filter(!is.na(lag_ndvi), !is.na(lag_ppt), !is.na(bmass_PB),
+                      !is.na(bmass_PP), !is.na(DIPO_bmass))
+
+#standardize variables####
+
+var_lag2$years=(var_lag2$year-mean(var_lag2$year))/(2*sd(var_lag2$year))
+var_lag2$ndvis=(var_lag2$lag_ndvi-mean(var_lag2$lag_ndvi))/(2*sd(var_lag2$lag_ndvi))
+var_lag2$ppts=(var_lag2$lag_ppt-mean(var_lag2$lag_ppt))/(2*sd(var_lag2$lag_ppt))
+var_lag2$dipos=(var_lag2$DIPO_bmass-mean(var_lag2$DIPO_bmass))/(2*sd(var_lag2$DIPO_bmass))
+var_lag2$pbs=(var_lag2$bmass_PB-mean(var_lag2$bmass_PB))/(2*sd(var_lag2$bmass_PB))
+var_lag2$pps=(var_lag2$bmass_PP-mean(var_lag2$bmass_PP))/(2*sd(var_lag2$bmass_PP))
 
 #visualization####
-pb_plot=all3_bmass%>%filter(species=="PB")
-pp_plot=all3_bmass%>%filter(species=="PP")
-dm_plot=all3_bmass%>%filter(species=="DM")
+pb_plot=var_lag2%>%filter(species=="PB")
+pp_plot=var_lag2%>%filter(species=="PP")
+dm_plot=var_lag2%>%filter(species=="DM")
 
 
 ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
@@ -348,7 +479,7 @@ ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
-  geom_point() +
+  geom_point() + 
   ylab("P(breeding)")+
   stat_smooth(method = 'gam', formula = y ~ s(x))+
   ggtitle("DM")+facet_wrap(~sex)+
