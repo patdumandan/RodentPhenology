@@ -279,20 +279,19 @@ PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
 ##### PB MALES IN CONTROL
 ```{r message=FALSE, echo=FALSE}
 #no explicit biotic effects
-m1=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)
-                   , data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
+m1=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+lag_ndvi+lag_ppt, data=wt, method = 'REML', weights = abundance, family = binomial)
 
 summary(m1) #R2=28.1%
 
 #add effect of DM biomass
-m1_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)
-                   , data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
+m1_bmass=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+ndvi+precipitation+bmass_PB
+                   , data=var_lag2, method = 'REML', weights = abundance, family = binomial)
 
 summary(m1_bmass) #R2=31.7%
 
 #add effect of DM biomass AND intraspecific competition (PB)
-m1_bmass2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation)+s(bmass_DM)+
-                   s(bmass_PB)+s(bmass_PP), data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
+m1_bmass2=mgcv::gam(proportion~s(month.y, bs="cc", k=12)+s(year)+ndvi+precipitation+bmass_DM+
+                   bmass_PB+bmass_PP, data=var_lag2, method = 'REML', weights = abundance, family = binomial)
 
 summary(m1_bmass2) #R2=35.7%
 
