@@ -11,14 +11,14 @@ PB_male_ex=pb_plot%>%filter(treatment=="exclosure", sex=="male")
 PB_female_con=pb_plot%>%filter(treatment=="control", sex=="female")
 PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
 
-X1 <- PB_female_ex$month
-X2= PB_female_ex$ndvi
-B <- t(bs(X1, knots=seq(-5,5,1), degree=3, intercept = TRUE)) # creating the B-splines
+X1 <- PB_female_con$month
+X2= PB_female_con$lag_ndvi
+B <- t(bs(X1, df = NULL, knots = NULL, degree=3, intercept = TRUE)) # creating B-splines using splines package
 num_data <- length(X1)
 num_basis <- nrow(B)
-Y = PB_female_ex$reproductive
+Y = PB_female_con$reproductive
 
-sm<-stan(model_code="
+smbb<-stan(model_code="
 data { 
   int num_data; //rows of observations 
   int num_basis; //no. of basis (order-1) 
@@ -60,44 +60,44 @@ model {
   Y_hat ~ beta(a1, b1);
   Y~ binomial(n, Y_hat);
 }",
-         iter=300, control=list(adapt_delta=0.95), 
+         iter=200, control=list(adapt_delta=0.95), 
          data =list(X1 =X1, # generating inputs
                     X2=X2,
-                    n=PB_female_ex$abundance,
+                    n=PB_female_con$abundance,
                     B =B, # creating the B-splines
                     num_data=num_data,
                     num_basis=num_basis,
                     Y=Y))
 
 #plotting regression lines over raw data####
-ff<-extract(sm)
+ff<-extract(smbb)
 Y_hat_med <- array(NA, length(Y)) #median estimate
 Y_hat_ub <- array(NA, length(Y)) #upper boundary
 Y_hat_lb <- array(NA, length(Y)) #lower boundary
 
 for (i in 1:length(Y)) {
   Y_hat_med[i] <- median(ff$Y_hat[,i]);
-  Y_hat_lb[i] <- quantile(ff$Y_hat[,i],probs = 0.25)
-  Y_hat_ub[i] <- quantile(ff$Y_hat[,i],probs = 0.75)
+  Y_hat_lb[i] <- quantile(ff$Y_hat[,i],probs = 0.025)
+  Y_hat_ub[i] <- quantile(ff$Y_hat[,i],probs = 0.975)
 }
 
-Y_hat=PB_female_ex$proportion
-plot(X1,Y_hat, xaxt="n") #plot raw data
+prop=PB_female_con$proportion
+plot(X1,prop, xaxt="n") #plot raw data
 axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
 lines(smooth.spline(X1, Y_hat_med), col="blue")
-lines(smooth.spline(X1, Y_hat_ub), lty=2)
-lines(smooth.spline(X1, Y_hat_lb), lty=2)
+lines(smooth.spline(X1, Y_hat_ub), lty=2, col="red")
+lines(smooth.spline(X1, Y_hat_lb), lty=2, col="red")
 
-yrep=extract(sm)$Y_hat
+yrep=extract(smbb)$Y_hat
 Y_hat_med <- array(NA, length(Y)) #median estimate
 for (i in 1:length(Y)) {
   Y_hat_med[i] <- mean(ff$Y_hat[,i])}
 
 #plot posterior draws####
-post1=rstan::extract(sm)$Y_hat
+post1=rstan::extract(smbb)$Y_hat
 post1=as.data.frame(post1)
 post1=t(post1)
-t3=cbind(PB_female_ex$month, post1)
+t3=cbind(PB_female_con$month, post1)
 t3=as.data.frame(t3)
 t3=t3%>%
   rename("month"="V1")
@@ -110,5 +110,5 @@ points(PB_female_ex$proportion~PB_female_ex$month, col="blue", pch=16)
 lines(smooth.spline(X1, Y_hat_med), col="red")
 
 #model output summary####
-print(sm, pars=c("a0", "ndvi_eff"))
+print(smbb, pars=c("a0", "ndvi_eff"))
 
