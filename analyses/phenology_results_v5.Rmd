@@ -12,6 +12,11 @@ library(ggplot2)
 library(lubridate)
 library(reshape2)
 library(RColorBrewer)
+library("splines")
+library("rstan")
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
 
 source("./RScripts/data_cleaning_functions_Supp.R")
 ```  
@@ -281,112 +286,8 @@ DM_all=rbind(total_proportion_dm_m, total_proportion_dm_f)
 DM_all=as.data.frame(DM_all)%>%
   mutate(species="DM")
 
-#DO DATASET####
-#males####
-DO=repro_male%>%
-  filter(species=="DO", wgt>=30)
-
-#get count of reproductive males per month per year per trt
-DO_dat=DO%>%
-  group_by(month, year, treatment)%>%
-  summarise(reproductive=n())
-
-#get total observed abundance for MALES per month per year per trt
-total_DO=portal_male%>%
-  filter(species=="DO")%>%
-  group_by(month,year, treatment)%>%
-  summarise(abundance=n())
-
-#calculate proportion
-#this creates NAs for months when no reproductive male was recorded
-total_proportion_do_m=right_join(DO_dat, total_DO)%>%
-  mutate(proportion=reproductive/abundance, sex="male")%>%
-  arrange(proportion)
-
-total_proportion_do_m[is.na(total_proportion_do_m)] <- 0 #set non-detects to 0
-
-#females####
-
-DOf=repro_female%>%
-  filter(species=="DO", wgt>=28)%>%arrange(wgt)
-
-#get count of reproductive males per month per year per trt
-DOf_dat=DOf%>%
-  group_by(month, year, treatment)%>%
-  summarise(reproductive=n())
-
-#get total observed abundance for each species per month per year per trt
-total_DOf=portal_female%>%
-  filter(species=="DO")%>%
-  group_by(month,year, treatment)%>%
-  summarise(abundance=n())
-
-#calculate proportion
-#this creates NAs for months when no reproductive male was recorded
-total_proportion_do_f=right_join(DOf_dat, total_DOf)%>%
-  mutate(proportion=reproductive/abundance, sex="female")%>%
-  arrange(proportion)
-
-total_proportion_do_f[is.na(total_proportion_do_f)] <- 0 #set non-detects to 0
-
-DO_all=rbind(total_proportion_do_m, total_proportion_do_f)
-DO_all=as.data.frame(DO_all)%>%
-  mutate(species="DO")
-
-#DS DATASET####
-#males####
-DS=repro_male%>%
-  filter(species=="DS",wgt>=25)%>%arrange(wgt)
-
-#get count of reproductive males per month per year per trt
-DS_dat=DS%>%
-  group_by(month, year, treatment)%>%
-  summarise(reproductive=n())
-
-#get total observed abundance for MALES per month per year per trt
-total_DS=portal_male%>%
-  filter(species=="DS")%>%
-  group_by(month,year, treatment)%>%
-  summarise(abundance=n())
-
-#calculate proportion
-#this creates NAs for months when no reproductive male was recorded
-total_proportion_ds_m=right_join(DS_dat, total_DS)%>%
-  mutate(proportion=reproductive/abundance, sex="male")%>%
-  arrange(proportion)
-
-total_proportion_ds_m[is.na(total_proportion_ds_m)] <- 0 #set non-detects to 0
-
-#females####
-
-DSf=repro_female%>%
-  filter(species=="DS", wgt>=78)%>%arrange(wgt)
-
-#get count of reproductive males per month per year per trt
-DSf_dat=DSf%>%
-  group_by(month, year, treatment)%>%
-  summarise(reproductive=n())
-
-#get total observed abundance for each species per month per year per trt
-total_DSf=portal_female%>%
-  filter(species=="DS")%>%
-  group_by(month,year, treatment)%>%
-  summarise(abundance=n())
-
-#calculate proportion
-#this creates NAs for months when no reproductive male was recorded
-total_proportion_ds_f=right_join(DSf_dat, total_DSf)%>%
-  mutate(proportion=reproductive/abundance, sex="female")%>%
-  arrange(proportion)
-
-total_proportion_ds_f[is.na(total_proportion_ds_f)] <- 0 #set non-detects to 0
-
-DS_all=rbind(total_proportion_ds_m, total_proportion_ds_f)
-DS_all=as.data.frame(DS_all)%>%
-  mutate(species="DS")
-
 #combine PB, PP and DM datasets####
-all_sp=rbind(PB_all, PP_all, DM_all, DO_all, DS_all)
+all_sp=rbind(PB_all, PP_all, DM_all)
 
 #add ndvi and ppt monthly data####
 
@@ -477,142 +378,29 @@ II. Analyses
 **M2 (abiotic + intraspecific competition)**: P(breeding) ~ s(month)+ s(year)+ lag_ndvi + lag_precipitation + biomass of given population (e.g., if model for PBs, biomass of PBs)  
 **M3 (abiotic + intra- and interspecific competition)**: P(breeding) ~ s(month)+ s(year)+ lag_ndvi + lag_precipitation + biomass of given population (e.g., if model for PBs, biomass of PBs) + biomass of other populations (Note: for biomass of dominant competitors, it is the total biomass for all k-rat species (DO,DM,DS))  
 
+*Modelling approaches*:  
+**mod1**: GAM through mgcv package  
+**mod2**: spline model with normal distribution in Stan  
+**mod3**: spline model with beta-binomial distribution in Stan  
 
-A. Bailey's pocket mouse  
+A. Preliminary Analyses focused on building M1 through different modelling approaches  
+*Note*: dataset used is PB females in control  
+
 ```{r message=FALSE, include=FALSE}
 PB_male_con=pb_plot%>%filter(treatment=="control", sex=="male")
 PB_male_ex=pb_plot%>%filter(treatment=="exclosure", sex=="male")
 PB_female_con=pb_plot%>%filter(treatment=="control", sex=="female")
 PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
-```
-
-1. males (control)  
-*M1*  
-```{r message=FALSE, echo=FALSE}
-#no explicit biotic effects
-m1=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt, data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
-
-summary(m1) 
-```  
-*M2*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass
-m1_bmass=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs
-                   , data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
-
-summary(m1_bmass) 
-```  
-*M3*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass AND intraspecific competition (PB)
-m1_bmass2=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs+
-                   pps+dipos, data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
-
-summary(m1_bmass2)
-```  
-2. males (exclosure)  
-*M1*  
-```{r message=FALSE, echo=FALSE}
-#no explicit biotic effects
-m2=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt, data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
-
-summary(m2) 
-```  
-*M2*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass
-m2_bmass=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs
-                   , data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
-
-summary(m2_bmass) 
-```  
-*M3*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass AND intraspecific competition (PB)
-m2_bmass2=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs+
-                   pps+dipos, data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
-
-summary(m2_bmass2)
-```  
-3. females (control)  
-*M1*  
-```{r message=FALSE, echo=FALSE}
-#no explicit biotic effects
-m3=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt, data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
-
-summary(m3) 
-```  
-*M2*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass
-m3_bmass=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs
-                   , data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
-
-summary(m3_bmass) 
-```  
-*M3*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass AND intraspecific competition (PB)
-m3_bmass2=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs+
-                   pps+dipos, data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
-
-summary(m3_bmass2)
-```  
-4. females (exclosure)  
-*M1*  
-```{r message=FALSE, echo=FALSE}
-#no explicit biotic effects
-m4=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt, data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
-
-summary(m4) 
-```  
-*M2*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass
-m4_bmass=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs
-                   , data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
-
-summary(m4_bmass) 
-```  
-*M3*  
-```{r message=FALSE, echo=FALSE}
-#add effect of DM biomass AND intraspecific competition (PB)
-m4_bmass2=mgcv::gam(proportion~s(month, bs="cc")+s(year)+lag_ndvi+lag_ppt+pbs+
-                   pps+dipos, data=PB_female_ex, method = 'REML', weights = abundance, family = binomial(link="logit"))
-
-summary(m4_bmass2)
 ```  
 
-III. Data Visualization  
+First, visualize data so we have a point of reference  
 
-```{r warning=F, message=F, echo=F}
-ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
-  geom_point() +
-  ylab("P(breeding)")+
-  stat_smooth(method = 'gam', formula = y ~ s(x))+
-  ggtitle("PB")+ facet_wrap(~sex)+
-  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
-                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
-  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
-        panel.border = element_blank(), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-
-ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
-  geom_point() +
-  ylab("P(breeding)")+
-  stat_smooth(method = 'gam', formula = y ~ s(x))+
-  ggtitle("PP")+facet_wrap(~sex)+
-  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
-                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
-  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
-        panel.border = element_blank(), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
-
-ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
+```{r echo=F}
+ggplot(PB_female_con, aes(y=proportion, x=month, col=treatment)) +
   geom_point() + 
   ylab("P(breeding)")+
   stat_smooth(method = 'gam', formula = y ~ s(x))+
-  ggtitle("DM")+facet_wrap(~sex)+
+  ggtitle("PB females in control")+
   scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
                                           "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
   theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
@@ -620,3 +408,258 @@ ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 ```
 
+1. **M1 mod1**  
+This model draws from McLean and Gurlanick's paper (2020) where they built a separate GAM to reconstruct breeding phenology of PEMA and separate GLMMs to test for the relationship of breeding odds with breeding cues (i.e., photoperiod, temperature, precipitation). Not sure why they didn't just make a single GAM and set the environmental variables as linear terms. Here we use a logistic function and cubic cyclic regression spline smoothers (bs="cc" because breeding events are cyclical).  
+
+```{r message=FALSE}
+#no explicit biotic effects
+mod1=mgcv::gam(proportion~s(month, bs="cc")+lag_ndvi+lag_ppt, data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
+```  
+
+```{r echo=FALSE}
+summary(mod1) 
+```  
+
+```{r echo=F, fig.cap="Fig.1. Partial effects plot (mod1)"}
+plot(mod1, shade=T)
+```  
+
+2. **M1 mod2**  
+This model is my attempt to make a simple spline model in Stan regardless of distribution (assumed to be normal). Here, I directly use the proportion data so not really weighting them properly. I am not really able to account for variation in the sample sizes (e.g., if 1 reproductive in 2 total individuals is treated similarly as 2 reproductive in 4 individuals). Here, we use the "splines" package to create the B-splines with degree set at 3 (cubic cyclic). I could probably build the b-splines directly into Stan but this seems easier, and would make the model less complex. I still have other variables to add, anyway.  
+
+```{r message=F, warning=F}  
+X1 <- PB_female_con$month
+X2= PB_female_con$lag_ndvi
+X3= PB_female_con$lag_ppt
+B <- t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = TRUE)) # creating the B-splines, degree=3 for cubic spline
+num_data <- length(X1)
+num_basis <- nrow(B)
+Y = PB_female_con$proportion
+
+mod2<-stan(model_code="
+data { 
+  int num_data; //rows of observations 
+  int num_basis; //no. of basis (order-1) 
+  real <lower=0,upper=1>Y[num_data]; //response variable (e.g., no.of breeding obs.)
+  vector[num_data] X1; //month
+  vector[num_data] X2; //ndvi 
+  vector[num_data] X3; //precip 
+  matrix[num_basis, num_data] B; //matrix of coefficients of splines(rows), length of X1 (columns)
+} 
+ 
+parameters { 
+  row_vector[num_basis] a_raw; // smooth terms for month
+  real a0; //intercept
+  real ndvi_eff;
+  real ppt_eff;
+  real<lower=0> sigma; //error term 
+  real<lower=0> tau; // for noncentered parameterization of spline coefficients
+} 
+ 
+transformed parameters { 
+  row_vector[num_basis] a; //noncentered parameters of splines
+  vector[num_data] Y_hat; 
+  
+  a = a_raw*tau;  
+
+ Y_hat=a0*X1 + ndvi_eff*X2 + ppt_eff*X3 + to_vector(a*B);
+ }
+
+model { 
+  a_raw ~ normal(0, 1); 
+  tau ~ normal(0, 1); 
+  sigma ~ normal(0, 1); 
+  ndvi_eff~normal(0,1);
+  ppt_eff~normal(0,1);
+  Y~ normal(Y_hat, sigma);
+  }",
+iter=300, control=list(adapt_delta=0.95), 
+data =list(X1 =X1, 
+           X2=X2,
+           X3=X3,
+           B =B, 
+           num_data=num_data,
+           num_basis=num_basis,
+           Y=Y))
+```  
+
+```{r echo=F}
+print(mod2, pars=c("a0", "ndvi_eff", "ppt_eff"))
+```  
+
+```{r echo=FALSE, fig.cap="Fig.2a. spline fit over raw data (mod2)"}
+#plotting splines####
+ff<-extract(mod2)
+Y_hat_med <- array(NA, length(Y)) #median estimate
+Y_hat_ub <- array(NA, length(Y)) #upper boundary
+Y_hat_lb <- array(NA, length(Y)) #lower boundary
+
+for (i in 1:length(Y)) {
+  Y_hat_med[i] <- median(ff$Y_hat[,i]);
+  Y_hat_lb[i] <- quantile(ff$Y_hat[,i],probs = 0.025)
+  Y_hat_ub[i] <- quantile(ff$Y_hat[,i],probs = 0.975)
+}
+
+plot(X1,Y, xaxt="n", ylab="P(breeding)", xlab="month") #plot raw data
+axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
+lines(smooth.spline(X1, Y_hat_med), col="blue")
+lines(smooth.spline(X1, Y_hat_lb), lty=2, col="red") #0.025
+lines(smooth.spline(X1, Y_hat_ub), lty=2, col="red") #0.975
+```  
+
+```{r echo=FALSE, fig.cap="Fig.2b. posterior draws over raw data (mod2)"}
+
+yrep=extract(mod2)$Y_hat
+Y_hat_med <- array(NA, length(Y)) #median estimate
+for (i in 1:length(Y)) {
+  Y_hat_med[i] <- mean(ff$Y_hat[,i])}
+
+#extract posterior draws####
+post1=rstan::extract(mod2)$Y_hat
+post1=as.data.frame(post1)
+post1=t(post1)
+t3=cbind(PB_female_con$month, post1)
+t3=as.data.frame(t3)
+t3=t3%>%
+  rename("month"="V1")
+t3=reshape2::melt(t3, id=c("month"))
+
+#plot posterior draws####
+plot(t3$value~t3$month, type="l", col="grey", ylim=c(0,1), xaxt="n",  ylab="P(breeding)", xlab="month")
+axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
+points(PB_female_con$proportion~PB_female_con$month, col="blue", pch=16)
+lines(smooth.spline(X1, Y_hat_med), col="red")
+
+```
+
+3. **M1 mod3**  
+This model has added complexity by assuming a beta-binomial (BB) distribution. This may be appropriate because if we use a binomial distribution, the probabilities are fixed (proportions are fixed). But in BB models, probabilities changes from trial to trial. This will help us account for the variation in sample sizes. So, here, the proportion of breeding events (or probability of breeding/breeding odds) has a binomial distribution but this probability has a beta distribution with shape parameters.   
+
+```{r message=F, warning=F}  
+
+X1 <- PB_female_con$month
+X2= PB_female_con$lag_ndvi
+X3= PB_female_con$lag_ppt
+B <- t(bs(X1, df = NULL, knots = NULL, degree=3, intercept = TRUE)) # creating B-splines using splines package
+num_data <- length(X1)
+num_basis <- nrow(B)
+Yct = PB_female_con$reproductive
+
+mod3<-stan(model_code="
+data { 
+  int num_data; //rows of observations 
+  int num_basis; //no. of basis (order-1) 
+  int Y[num_data]; //response variable (e.g., no.of breeding obs.)
+  int n[num_data]; //total no.of indivs in plot
+  vector[num_data] X1; //month
+  vector[num_data] X2; //ndvi 
+  vector[num_data] X3; //precip 
+  matrix[num_basis, num_data] B; //matrix of coefficients of splines(rows), length of X1 (columns)
+} 
+ 
+parameters { 
+  row_vector[num_basis] a_raw; // smooth terms for month
+  real a0; //intercept
+  real ndvi_eff;
+  real ppt_eff;
+  real<lower=0> sigma; //error term 
+  real<lower=0> tau; // for noncentered parameterization of spline coefficients
+} 
+ 
+transformed parameters { 
+  row_vector[num_basis] a; //noncentered parameters of splines
+  vector <lower=0, upper=1> [num_data] Y_hat; // mean of response variable
+  vector <lower=0> [num_data] a1;
+  vector <lower=0> [num_data] b1;
+  
+  a = a_raw*tau;  
+  for (i in 1: num_data){
+  Y_hat = inv_logit(a0*X1 +ndvi_eff*X2+ppt_eff*X3+ to_vector(a*B)); 
+  }
+
+a1=Y_hat*tau;
+b1=(1-Y_hat)*tau;
+}
+
+model { 
+  a_raw ~ normal(0, 1); 
+  tau ~ normal(0, 1); 
+  sigma ~ normal(0, 1); 
+  ndvi_eff~normal(0,1);
+  ppt_eff~normal(0,1);
+  Y_hat ~ beta(a1, b1);
+  Y~ binomial(n, Y_hat);
+}",
+         iter=300, control=list(adapt_delta=0.95), 
+         data =list(X1 =X1, 
+                    X2=X2,
+                    X3=X3,
+                    n=PB_female_con$abundance,
+                    B =B, 
+                    num_data=num_data,
+                    num_basis=num_basis,
+                    Y=PB_female_con$reproductive))
+```  
+
+```{r echo=F}
+print(mod3, pars=c ("a0", "ndvi_eff", "ppt_eff"))
+```
+
+```{r echo=F, fig.cap="Fig.3a. spline fit over raw data (mod3)"}
+
+#plotting regression lines over raw data####
+ff<-extract(mod3)
+Y_hat_med <- array(NA, length(Y)) #median estimate
+Y_hat_ub <- array(NA, length(Y)) #upper boundary
+Y_hat_lb <- array(NA, length(Y)) #lower boundary
+
+for (i in 1:length(Y)) {
+  Y_hat_med[i] <- median(ff$Y_hat[,i]);
+  Y_hat_lb[i] <- quantile(ff$Y_hat[,i],probs = 0.025)
+  Y_hat_ub[i] <- quantile(ff$Y_hat[,i],probs = 0.975)
+}
+
+prop=PB_female_con$proportion
+
+plot(X1,prop, xaxt="n",  ylab="P(breeding)", xlab="month") #plot raw data
+axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
+lines(smooth.spline(X1, Y_hat_med), col="blue")
+lines(smooth.spline(X1, Y_hat_ub), lty=2, col="red")
+lines(smooth.spline(X1, Y_hat_lb), lty=2, col="red")
+```  
+
+```{r echo=F, fig.cap="Fig.3b. posterior draws over raw data (mod3)"}
+yrep=extract(mod3)$Y_hat
+Y_hat_med <- array(NA, length(Y)) #median estimate
+for (i in 1:length(Y)) {
+  Y_hat_med[i] <- mean(ff$Y_hat[,i])}
+
+#plot posterior draws####
+post2=rstan::extract(mod3)$Y_hat
+post2=as.data.frame(post2)
+post2=t(post2)
+t2=cbind(PB_female_con$month, post2)
+t2=as.data.frame(t2)
+t2=t2%>%
+  rename("month"="V1")
+t2=reshape2::melt(t2, id=c("month"))
+
+#plot posterior draws####
+plot(t2$value~t2$month, type="l", col="grey", ylim=c(0,1), xaxt="n",  ylab="P(breeding)", xlab="month")
+axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
+points(PB_female_con$proportion~PB_female_con$month, col="blue", pch=16)
+lines(smooth.spline(X1, Y_hat_med), col="red")
+```  
+
+Issues:  
+* adding lags result to the truncation of the dataset. I don't have December plotted. did I add the lags wrong?  
+* intercept in all models are way off 
+```{r}
+mean(PB_female_con$proportion) #raw data
+plogis(-4.01) #mod1
+plogis(0) #mod2
+plogis(-0.36) #mod3
+```  
+* how to calculate derivatives from Stan output  
+* how to add multiple smooth terms in Stan  
+* how important is it to add a smoothing prior?  
