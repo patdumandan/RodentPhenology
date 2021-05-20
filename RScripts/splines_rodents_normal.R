@@ -14,12 +14,12 @@ PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
 X1 <- PB_female_con$month
 X2= PB_female_con$lag_ndvi
 X3= PB_female_con$lag_ppt
-B <- t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = TRUE)) # creating the B-splines
+B <- t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = TRUE)) # creating the B-splines, degree=3 for cubic spline
 num_data <- length(X1)
 num_basis <- nrow(B)
 Y = PB_female_con$proportion
 
-sm<-stan(model_code="
+mod2<-stan(model_code="
 data { 
   int num_data; //rows of observations 
   int num_basis; //no. of basis (order-1) 

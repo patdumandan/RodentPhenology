@@ -433,18 +433,18 @@ all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))%>%
 
 # adding lags of weather variables####
 var_lag=all_bmass3%>%
-  mutate(month=as.integer(month), lag_month=month-1)%>%
+  mutate(lag_month=month-1)%>%
   select(lag_month, ndvi, precipitation, month, year)%>%
   rename(lag_ndvi=ndvi, lag_ppt=precipitation)
 
 var_lag2=left_join(all_bmass3, var_lag, by=c("month"="lag_month", "year"))%>%
-  distinct()%>%filter(!is.na(lag_ndvi), !is.na(lag_ppt), !is.na(bmass_PB),
-                      !is.na(bmass_PP), !is.na(DIPO_bmass))
+  distinct()%>%fill(lag_ndvi, lag_ppt)
 
+#adding the lags is giving me NAs in NDVI and ppt so I can't really standardize
 #standardize variables####
 
 var_lag2$years=(var_lag2$year-mean(var_lag2$year))/(2*sd(var_lag2$year))
-var_lag2$ndvis=(var_lag2$lag_ndvi-mean(var_lag2$lag_ndvi))/(2*sd(var_lag2$lag_ndvi))
+var_lag2$ndvis=(var_lag2$lag_ndvi-mean(var_lag2$lag_ndvi))/(sd(var_lag2$lag_ndvi))
 var_lag2$ppts=(var_lag2$lag_ppt-mean(var_lag2$lag_ppt))/(2*sd(var_lag2$lag_ppt))
 var_lag2$dipos=(var_lag2$DIPO_bmass-mean(var_lag2$DIPO_bmass))/(2*sd(var_lag2$DIPO_bmass))
 var_lag2$pbs=(var_lag2$bmass_PB-mean(var_lag2$bmass_PB))/(2*sd(var_lag2$bmass_PB))

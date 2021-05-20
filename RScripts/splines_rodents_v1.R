@@ -13,6 +13,7 @@ PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
 
 X1 <- PB_female_con$month
 X2= PB_female_con$lag_ndvi
+X3= PB_female_con$lag_ppt
 B <- t(bs(X1, df = NULL, knots = NULL, degree=3, intercept = TRUE)) # creating B-splines using splines package
 num_data <- length(X1)
 num_basis <- nrow(B)
@@ -35,6 +36,7 @@ parameters {
   real ndvi_eff;
   real<lower=0> sigma; //error term 
   real<lower=0> tau; // for noncentered parameterization of spline coefficients
+  real <lower=0, upper=1> reprod_pred; //breeding odds
 } 
  
 transformed parameters { 
