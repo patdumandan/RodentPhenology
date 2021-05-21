@@ -6,7 +6,6 @@ library(portalr)
 library(ggplot2)
 library(lubridate)
 library(reshape2)
-library(RColorBrewer)
 
 source("./RScripts/data_cleaning_functions_Supp.R")
 
@@ -27,7 +26,7 @@ Portal_data=summarize_individual_rodents(
 
 #add note5 column to filter out dead indivs####
 
-Portal_rodent=read.csv("./PortalData/Rodents/Portal_rodent.csv")
+Portal_rodent=read.csv("https://raw.githubusercontent.com/weecology/PortalData/main/Rodents/Portal_rodent.csv")
 Portal_data_indiv=left_join(Portal_data, Portal_rodent)%>%
   select(period, month, day, year, treatment, plot, stake, species, sex, reprod, age, testes, vagina, pregnant, nipples, lactation,
          hfl, wgt,tag,note2, note5)
@@ -38,7 +37,7 @@ all_tag=id_unknowns(Portal_data_indiv, 19)
 
 #find and remove bad periods (periods with only one day of trapping)####
 
-Portal_rodent_trapping= read.csv("./PortalData/Rodents/Portal_rodent_trapping.csv")
+Portal_rodent_trapping= read.csv("https://raw.githubusercontent.com/weecology/PortalData/main/Rodents/Portal_rodent_trapping.csvv")
 tdat=Portal_rodent_trapping%>%group_by(period)%>%summarise(count=sum(sampled))%>%arrange(count)
 bad_periods <- filter(tdat, count < 20) #based on Sarah's code
 bad_periods <- as.list(bad_periods$period)

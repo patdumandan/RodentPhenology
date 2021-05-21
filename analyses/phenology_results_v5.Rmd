@@ -3,7 +3,17 @@ title: "phenology_results_v5"
 author: "Pat Dumandan"
 ---
 
-```{r setup, include=FALSE}
+I. Data Preparation  
+
+Notes:  
+* use Sarah's code to check for bad tags, bad periods and remove them  
+* use only data from 1988-2014 (period when the plot assignments were fairly constant)  
+* use only plot-level data from 18 plots (control and exclosure): 1, 2, 4, 8, 9, 11, 12, 14, 17, 22,3, 6, 13, 15, 18, 19, 20, 21  
+* proportion of breeders is the number of individuals of a given species and sex in a given plot that exhibits reproductive characteristics divided by the total number of individuals of a given species and sex in a given plot  
+* for months when no observations on reproductive individuals were made, set at 0 (not really account for detection bias)  
+* lag of 1 set for NDVI and precipitation  
+* all variables except month were standardized (centered each value on the mean and divide by two SDs, Gelman 2008) 
+```{r include=F}
 library(dplyr)
 library(tidyr)
 library(portalr)
@@ -16,18 +26,8 @@ library(rstan)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-source("https://raw.githubusercontent.com/patdumandan/ReproPhenology/main/RScripts/data_cleaning_functions_Supp.R?token=ALERW4LPJPSOMYGSVCJRUS3AUPBRQ")
+source("https://raw.githubusercontent.com/patdumandan/ReproPhenology/main/RScripts/data_cleaning_functions_Supp.R?token=ALERW4NUBNB57GNJO3WRO4DAU7BQS")
 ```  
-
-I. Data Preparation  
-
-Notes:  
-* use Sarah's code to check for bad tags, bad periods and remove them  
-* use only data from 1988-2014 (period when the plot assignments were fairly constant)  
-* use only plot-level data from 18 plots (control and exclosure): 1, 2, 4, 8, 9, 11, 12, 14, 17, 22,3, 6, 13, 15, 18, 19, 20, 21 * proportion of breeders is the number of individuals of a given species and sex in a given plot that exhibits reproductive characteristics divided by the total number of individuals of a given species and sex in a given plot  
-* for months when no observations on reproductive individuals were made, set at 0 (not really account for detection bias)  
-* lag of 1 set for NDVI and precipitation  
-* all variables except month were standardized (centered each value on the mean and divide by two SDs, Gelman 2008) 
 
 ```{r warning=FALSE, message=FALSE, echo=FALSE}
 ####load cleaned individual-level data####
@@ -47,7 +47,7 @@ Portal_data=summarize_individual_rodents(
 
 #add note5 column to filter out dead indivs####
 
-Portal_rodent=read.csv("https://raw.githubusercontent.com/patdumandan/PortalData/master/Rodents/Portal_rodent.csv")
+Portal_rodent=read.csv("https://raw.githubusercontent.com/weecology/PortalData/main/Rodents/Portal_rodent.csv")
 Portal_data_indiv=left_join(Portal_data, Portal_rodent)%>%
   select(period, month, day, year, treatment, plot, stake, species, sex, reprod, age, testes, vagina, pregnant, nipples, lactation, hfl, wgt,tag,note2, note5)
 
@@ -57,7 +57,7 @@ all_tag=id_unknowns(Portal_data_indiv, 19)
 
 #find and remove bad periods (periods with only one day of trapping)####
 
-Portal_rodent_trapping= read.csv("https://raw.githubusercontent.com/patdumandan/PortalData/master/Rodents/Portal_rodent_trapping.csv")
+Portal_rodent_trapping= read.csv("https://raw.githubusercontent.com/weecology/PortalData/main/Rodents/Portal_rodent_trapping.csv")
 tdat=Portal_rodent_trapping%>%group_by(period)%>%summarise(count=sum(sampled))%>%arrange(count)
 bad_periods <- filter(tdat, count < 20) #based on Sarah's code
 bad_periods <- as.list(bad_periods$period)
@@ -95,7 +95,7 @@ Portal_no_same= no_dup[-which(no_dup$tag %in% sametags),]
 Portal_clean=subsetDat(Portal_no_same)
 
 #Note: this analysis does not necessarily follow the capture history of 
-#individuals, what we want are just the event IDs/observations of reprod.
+#individuals, what we want is just the event IDs/observations of reprod.
 #characteristics to determine peak timing of breeding events
 
 #PB DATASET####
@@ -340,16 +340,22 @@ all_bmass13=left_join(all_bmass12,DS_bmass, by=c("month", "year", "treatment"))
 all_bmass2=left_join(all_bmass13,PB_bmass, by=c("month", "year", "treatment"))
 all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))%>%
   mutate(DIPO_bmass=rowSums(.[12:14]))
+```  
+
+**This is where I start to need Glenda's input**  
+* Am I applying the lags properly? If not, what's the best way for me to do it?  
+* Right now, I'm having problems with having Dec-Jan to transition properly. So I'm filling in the ndvi and precipitation with the value from the previous month, which I think isn't necessarily correct, especially for precipitation. I think for NDVI it is acceptable? because of their high autocorrelation in values?   
+* Is this something I could do using portalcasting functionalities?  
+```{r echo=F, warning=F, message=FALSE}
 
 # adding lags of weather variables####
 var_lag=all_bmass3%>%
-  mutate(month=as.integer(month), lag_month=month-1)%>%
+  mutate(month=as.integer(month), lag_month=month+1)%>%
   select(lag_month, ndvi, precipitation, month, year)%>%
   rename(lag_ndvi=ndvi, lag_ppt=precipitation)
 
 var_lag2=left_join(all_bmass3, var_lag, by=c("month"="lag_month", "year"))%>%
-  distinct()%>%filter(!is.na(lag_ndvi), !is.na(lag_ppt), !is.na(bmass_PB),
-                      !is.na(bmass_PP), !is.na(DIPO_bmass))
+  distinct()%>%fill(lag_ndvi, lag_ppt)
 
 #standardize variables####
 
@@ -374,7 +380,7 @@ II. Analyses
 * build species- and sex- specific GAMs with increasing levels of complexity (Note: P(breeding)=proportion of individuals exhibiting reproductive characteristics)  
 **M1 (abiotic only model)**: P(breeding)~ s(month)+ s(year)+ lag_ndvi + lag_precipitation  
 **M2 (abiotic + intraspecific competition)**: P(breeding) ~ s(month)+ s(year)+ lag_ndvi + lag_precipitation + biomass of given population (e.g., if model for PBs, biomass of PBs)  
-**M3 (abiotic + intra- and interspecific competition)**: P(breeding) ~ s(month)+ s(year)+ lag_ndvi + lag_precipitation + biomass of given population (e.g., if model for PBs, biomass of PBs) + biomass of other populations (Note: for biomass of dominant competitors, it is the total biomass for all k-rat species (DO,DM,DS))  
+**M3 (abiotic + intra- and interspecific competition)**: P(breeding) ~ s(month)+ s(year)+ lag_ndvi + lag_precipitation + biomass of given population (e.g., if model for PBs, biomass of PBs) + biomass of other populations   
 
 *Modelling approaches*:  
 **mod1**: GAM through mgcv package  
@@ -382,7 +388,9 @@ II. Analyses
 **mod3**: spline model with beta-binomial distribution in Stan  
 
 A. Preliminary Analyses focused on building M1 through different modelling approaches  
-*Note*: dataset used is PB females in control  
+*Notes*  
+* dataset used is PB females in control  
+* for now, building M1 through 3 different modelling approaches to see, which one is the most appropriate
 
 ```{r message=FALSE, include=FALSE}
 PB_male_con=pb_plot%>%filter(treatment=="control", sex=="male")
@@ -391,7 +399,7 @@ PB_female_con=pb_plot%>%filter(treatment=="control", sex=="female")
 PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
 ```  
 
-First, visualize data so we have a point of reference  
+First, visualize data so we have a point of reference  (regression line is just proportion~month)
 
 ```{r echo=F}
 ggplot(PB_female_con, aes(y=proportion, x=month, col=treatment)) +
@@ -407,11 +415,11 @@ ggplot(PB_female_con, aes(y=proportion, x=month, col=treatment)) +
 ```
 
 1. **M1 mod1**  
-This model draws from McLean and Gurlanick's paper (2020) where they built a separate GAM to reconstruct breeding phenology of PEMA and separate GLMMs to test for the relationship of breeding odds with breeding cues (i.e., photoperiod, temperature, precipitation). Not sure why they didn't just make a single GAM and set the environmental variables as linear terms. Here we use a logistic function and cubic cyclic regression spline smoothers (bs="cc" because breeding events are cyclical).  
+This model draws from McLean and Guralnick's paper (2020) where they built a separate GAM to reconstruct breeding phenology of PEMA and separate GLMMs to test for the relationship of breeding odds with breeding cues (i.e., photoperiod, temperature, precipitation). Not sure why they didn't just make a single GAM and set the environmental variables as linear terms. Here we use a logistic function and cubic cyclic regression spline smoothers (bs="cc" because breeding events are cyclical).  
 
 ```{r message=FALSE}
 #no explicit biotic effects
-mod1=mgcv::gam(proportion~s(month, bs="cc")+lag_ndvi+lag_ppt, data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
+mod1=mgcv::gam(proportion~s(month, bs="cc")+s(year)+ lag_ndvi+lag_ppt, data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
 ```  
 
 ```{r echo=FALSE}
@@ -426,59 +434,77 @@ plot(mod1, shade=T)
 This model is my attempt to make a simple spline model in Stan regardless of distribution (assumed to be normal). Here, I directly use the proportion data so not really weighting them properly. I am not really able to account for variation in the sample sizes (e.g., if 1 reproductive in 2 total individuals is treated similarly as 2 reproductive in 4 individuals). Here, we use the "splines" package to create the B-splines with degree set at 3 (cubic cyclic). I could probably build the b-splines directly into Stan but this seems easier, and would make the model less complex. I still have other variables to add, anyway.  
 
 ```{r message=F, warning=F}  
-X1 <- PB_female_con$month
-X2= PB_female_con$lag_ndvi
-X3= PB_female_con$lag_ppt
-B <- t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = TRUE)) # creating the B-splines, degree=3 for cubic spline
-num_data <- length(X1)
-num_basis <- nrow(B)
+X1 =PB_female_con$month
+X2= PB_female_con$year
+X3= PB_female_con$lag_ndvi
+X4= PB_female_con$lag_ppt
+num_data = length(X1)
+B1 = t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = FALSE)) # creating the B-splines, degree=3 for cubic spline
+B2 = t(bs(X2, df=NULL, knots=NULL, degree=3, intercept = FALSE))
+num_basis1 = nrow(B1)
+num_basis2 = nrow(B2)
 Y = PB_female_con$proportion
+
+dat_list=list(X1 =PB_female_con$month,
+              X2= PB_female_con$year,
+              X3= PB_female_con$lag_ndvi,
+              X4= PB_female_con$lag_ppt,
+              num_data = length(X1),
+              B1 = t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = FALSE)), # creating the B-splines, degree=3 for cubic spline
+              B2 = t(bs(X2, df=NULL, knots=NULL, degree=3, intercept = FALSE)),
+              num_basis1 = nrow(B1),
+              num_basis2 = nrow(B2),
+              Y = PB_female_con$proportion)
 
 mod2<-stan(model_code="
 data { 
   int num_data; //rows of observations 
-  int num_basis; //no. of basis (order-1) 
+  int num_basis1; //no. of basis (order-1) 
+  int num_basis2; //no. of basis (order-1)
   real <lower=0,upper=1>Y[num_data]; //response variable (e.g., no.of breeding obs.)
-  vector[num_data] X1; //month
-  vector[num_data] X2; //ndvi 
-  vector[num_data] X3; //precip 
-  matrix[num_basis, num_data] B; //matrix of coefficients of splines(rows), length of X1 (columns)
+  vector[num_data] X3; //lag_NDVI
+  vector[num_data] X4; //lag_ppt
+  matrix[num_basis1, num_data] B1; //matrix of coefficients of splines(rows), length of X1 (columns)
+   matrix[num_basis2, num_data] B2; //matrix of coefficients of splines(rows), length of X1 (columns)
 } 
  
 parameters { 
-  row_vector[num_basis] a_raw; // smooth terms for month
+  row_vector[num_basis1] a_raw; // smooth terms for month
+  row_vector[num_basis2] b_raw; // smooth terms for year
   real a0; //intercept
   real ndvi_eff;
   real ppt_eff;
-  real<lower=0> sigma; //error term 
-  real<lower=0> tau; // for noncentered parameterization of spline coefficients
+
+  real<lower=0> sigma; //error term for shape params 
+  real<lower=0> tau; // for noncentered parameterization of spline coefficients (month)
+  real<lower=0> phi; // for noncentered parameterization of spline coefficients (year)
+  
 } 
  
 transformed parameters { 
-  row_vector[num_basis] a; //noncentered parameters of splines
+  row_vector[num_basis1] a; //noncentered parameters of splines
+  row_vector[num_basis2] b; //noncentered parameters of splines
+  
   vector[num_data] Y_hat; 
   
   a = a_raw*tau;  
-
- Y_hat=a0*X1 + ndvi_eff*X2 + ppt_eff*X3 + to_vector(a*B);
+  b = b_raw*phi;
+  
+ Y_hat=a0 + ndvi_eff*X3 +ppt_eff*X4 + to_vector(a*B1)+ to_vector(b*B2);
  }
 
 model { 
   a_raw ~ normal(0, 1); 
+  b_raw ~ normal(0, 1); 
+  phi~normal(0,1);
   tau ~ normal(0, 1); 
   sigma ~ normal(0, 1); 
   ndvi_eff~normal(0,1);
   ppt_eff~normal(0,1);
+  
   Y~ normal(Y_hat, sigma);
-  }",
-iter=300, control=list(adapt_delta=0.95), 
-data =list(X1 =X1, 
-           X2=X2,
-           X3=X3,
-           B =B, 
-           num_data=num_data,
-           num_basis=num_basis,
-           Y=Y))
+  }",iter=300,
+data =dat_list, chains=2)
 ```  
 
 ```{r echo=F}
@@ -507,13 +533,13 @@ lines(smooth.spline(X1, Y_hat_ub), lty=2, col="red") #0.975
 
 ```{r echo=FALSE, fig.cap="Fig.2b. posterior draws over raw data (mod2)"}
 
-yrep=extract(mod2)$Y_hat
+yrep=extract(mod2)$Y
 Y_hat_med <- array(NA, length(Y)) #median estimate
 for (i in 1:length(Y)) {
   Y_hat_med[i] <- mean(ff$Y_hat[,i])}
 
 #extract posterior draws####
-post1=rstan::extract(mod2)$Y_hat
+post1=rstan::extract(mod2)$Y
 post1=as.data.frame(post1)
 post1=t(post1)
 t3=cbind(PB_female_con$month, post1)
@@ -535,68 +561,94 @@ This model has added complexity by assuming a beta-binomial (BB) distribution. T
 
 ```{r message=F, warning=F}  
 
-X1 <- PB_female_con$month
-X2= PB_female_con$lag_ndvi
-X3= PB_female_con$lag_ppt
-B <- t(bs(X1, df = NULL, knots = NULL, degree=3, intercept = TRUE)) # creating B-splines using splines package
-num_data <- length(X1)
-num_basis <- nrow(B)
-Yct = PB_female_con$reproductive
+X1 =PB_female_con$month
+X2= PB_female_con$year
+X3= PB_female_con$lag_ndvi
+X4= PB_female_con$lag_ppt
+num_data = length(X1)
+B1 = t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = FALSE)) # creating the B-splines, degree=3 for cubic spline
+B2 = t(bs(X2, df=NULL, knots=NULL, degree=3, intercept = FALSE))
+num_basis1 = nrow(B1)
+num_basis2 = nrow(B2)
+Y = PB_female_con$reproductive
+n=PB_female_con$abundance
+
+dat_list2=list(X1 =PB_female_con$month,
+               X2= PB_female_con$year,
+               X3= PB_female_con$lag_ndvi,
+               X4= PB_female_con$lag_ppt,
+               num_data = length(X1),
+               B1 = t(bs(X1, df=NULL, knots=NULL, degree=3, intercept = FALSE)), # creating the B-splines, degree=3 for cubic spline
+               B2 = t(bs(X2, df=NULL, knots=NULL, degree=3, intercept = FALSE)),
+               num_basis1 = nrow(B1),
+               num_basis2 = nrow(B2),
+               Y = PB_female_con$reproductive,
+               n=PB_female_con$abundance)
 
 mod3<-stan(model_code="
 data { 
   int num_data; //rows of observations 
-  int num_basis; //no. of basis (order-1) 
-  int Y[num_data]; //response variable (e.g., no.of breeding obs.)
+  int num_basis1; //no. of basis (order-1) 
+  int num_basis2; //no. of basis (order-1)
+  
+  int Y[num_data]; //response variable (# of reproductive)
   int n[num_data]; //total no.of indivs in plot
-  vector[num_data] X1; //month
-  vector[num_data] X2; //ndvi 
-  vector[num_data] X3; //precip 
-  matrix[num_basis, num_data] B; //matrix of coefficients of splines(rows), length of X1 (columns)
+   
+  vector[num_data] X3; //lag_NDVI
+  vector[num_data] X4; //lag_ppt
+  
+  matrix[num_basis1, num_data] B1; //matrix of coefficients of splines(rows), length of X1 (columns)
+  matrix[num_basis2, num_data] B2; //matrix of coefficients of splines(rows), length of X1 (columns)
+
 } 
  
 parameters { 
-  row_vector[num_basis] a_raw; // smooth terms for month
+ row_vector[num_basis1] a_raw; // smooth terms for month
+  row_vector[num_basis2] b_raw; // smooth terms for year
   real a0; //intercept
   real ndvi_eff;
   real ppt_eff;
-  real<lower=0> sigma; //error term 
+  
+  real<lower=0> sigma; //error term for shape params
   real<lower=0> tau; // for noncentered parameterization of spline coefficients
+  real<lower=0> phi; // for noncentered parameterization of spline coefficients (year)
+  
+ vector <lower=0, upper=1> [num_data] pred_repro;//breeding odds as a parameter
 } 
  
 transformed parameters { 
-  row_vector[num_basis] a; //noncentered parameters of splines
+  row_vector[num_basis1] a; //noncentered parameters of splines
+  row_vector[num_basis2] b; //noncentered parameters of splines
+  
+  //beta dist of probability as a deterministic function
   vector <lower=0, upper=1> [num_data] Y_hat; // mean of response variable
+ 
+ //beta shape params
   vector <lower=0> [num_data] a1;
   vector <lower=0> [num_data] b1;
   
   a = a_raw*tau;  
-  for (i in 1: num_data){
-  Y_hat = inv_logit(a0*X1 +ndvi_eff*X2+ppt_eff*X3+ to_vector(a*B)); 
-  }
+  b = b_raw*phi; 
+  
+  Y_hat = inv_logit(a0 +ndvi_eff*X3+ ppt_eff*X4+ to_vector(a*B1)+ to_vector(b*B2)); 
+  
 
-a1=Y_hat*tau;
-b1=(1-Y_hat)*tau;
+a1=Y_hat*sigma;
+b1=(1-Y_hat)*sigma;
 }
 
 model { 
   a_raw ~ normal(0, 1); 
+  b_raw ~ normal(0, 1);
   tau ~ normal(0, 1); 
+  phi ~ normal(0, 1);
   sigma ~ normal(0, 1); 
   ndvi_eff~normal(0,1);
-  ppt_eff~normal(0,1);
-  Y_hat ~ beta(a1, b1);
-  Y~ binomial(n, Y_hat);
+  pred_repro ~ beta(a1, b1);
+  Y~ binomial(n, pred_repro);
 }",
-         iter=300, control=list(adapt_delta=0.95), 
-         data =list(X1 =X1, 
-                    X2=X2,
-                    X3=X3,
-                    n=PB_female_con$abundance,
-                    B =B, 
-                    num_data=num_data,
-                    num_basis=num_basis,
-                    Y=PB_female_con$reproductive))
+         iter=200, control=list(max_treedepth=12),
+         data =dat_list2)
 ```  
 
 ```{r echo=F}
@@ -612,14 +664,13 @@ Y_hat_ub <- array(NA, length(Y)) #upper boundary
 Y_hat_lb <- array(NA, length(Y)) #lower boundary
 
 for (i in 1:length(Y)) {
-  Y_hat_med[i] <- median(ff$Y_hat[,i]);
-  Y_hat_lb[i] <- quantile(ff$Y_hat[,i],probs = 0.025)
-  Y_hat_ub[i] <- quantile(ff$Y_hat[,i],probs = 0.975)
+  Y_hat_med[i] <- median(ff$pred_repro[,i]);
+  Y_hat_lb[i] <- quantile(ff$pred_repro[,i],probs = 0.025)
+  Y_hat_ub[i] <- quantile(ff$pred_repro[,i],probs = 0.975)
 }
 
 prop=PB_female_con$proportion
-
-plot(X1,prop, xaxt="n",  ylab="P(breeding)", xlab="month") #plot raw data
+plot(X1,prop, xaxt="n") #plot raw data
 axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
 lines(smooth.spline(X1, Y_hat_med), col="blue")
 lines(smooth.spline(X1, Y_hat_ub), lty=2, col="red")
@@ -627,37 +678,30 @@ lines(smooth.spline(X1, Y_hat_lb), lty=2, col="red")
 ```  
 
 ```{r echo=F, fig.cap="Fig.3b. posterior draws over raw data (mod3)"}
-yrep=extract(mod3)$Y_hat
+yrep=extract(mod3)$pred_repro
 Y_hat_med <- array(NA, length(Y)) #median estimate
 for (i in 1:length(Y)) {
   Y_hat_med[i] <- mean(ff$Y_hat[,i])}
 
 #plot posterior draws####
-post2=rstan::extract(mod3)$Y_hat
-post2=as.data.frame(post2)
-post2=t(post2)
-t2=cbind(PB_female_con$month, post2)
-t2=as.data.frame(t2)
-t2=t2%>%
+post1=rstan::extract(mod3)$pred_repro
+post1=as.data.frame(post1)
+post1=t(post1)
+t3=cbind(PB_female_con$month, post1)
+t3=as.data.frame(t3)
+t3=t3%>%
   rename("month"="V1")
-t2=reshape2::melt(t2, id=c("month"))
+t3=reshape2::melt(t3, id=c("month"))
 
 #plot posterior draws####
-plot(t2$value~t2$month, type="l", col="grey", ylim=c(0,1), xaxt="n",  ylab="P(breeding)", xlab="month")
+plot(t3$value~t3$month, type="l", col="grey", ylim=c(0,1), xaxt="n")
 axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12))
-points(PB_female_con$proportion~PB_female_con$month, col="blue", pch=16)
+points(PB_female_ex$proportion~PB_female_ex$month, col="blue", pch=16)
 lines(smooth.spline(X1, Y_hat_med), col="red")
 ```  
 
-Issues:  
-* adding lags result to the truncation of the dataset. I don't have December plotted. did I add the lags wrong?  
-* intercept in all models are way off 
-```{r}
-mean(PB_female_con$proportion) #raw data
-plogis(-4.01) #mod1
-plogis(0) #mod2
-plogis(-0.36) #mod3
-```  
-* how to calculate derivatives from Stan output  
-* how to add multiple smooth terms in Stan  
-* how important is it to add a smoothing prior?  
+**To figure out**
+* how to calculate derivatives from Stan output (in generated quantities block? maybe check Gavin's gist for creating Deriv function?)      
+* do I need to standardize the predictors for the smooth terms? or does it not matter, really?   
+* how important is it to add a smoothing prior?    
+* will I get the same results if I use a binomial distribution with a logit parameterization rather than a beta-binomial model?  
