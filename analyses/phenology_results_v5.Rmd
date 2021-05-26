@@ -12,7 +12,7 @@ Notes:
 * proportion of breeders is the number of individuals of a given species and sex in a given plot that exhibits reproductive characteristics divided by the total number of individuals of a given species and sex in a given plot  
 * for months when no observations on reproductive individuals were made, set at 0 (not really account for detection bias)  
 * lag of 1 set for NDVI and precipitation  
-* all variables except month were standardized (centered each value on the mean and divide by two SDs, Gelman 2008) 
+* all variables except month and year were standardized (centered each value on the mean and divide by two SDs, Gelman 2008) 
 ```{r include=F}
 library(dplyr)
 library(tidyr)
