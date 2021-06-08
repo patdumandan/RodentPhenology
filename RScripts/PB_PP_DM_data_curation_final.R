@@ -282,7 +282,7 @@ ndvi_lag=prod2%>%
   mutate(lag_ndvi=lag(ndvi,order_by=date))%>%
   filter(!(year<1988))
 
-temp=weather(level="monthly", fill=TRUE)%>%
+temp=weather(level="monthly", fill=TRUE, horizon=180)%>%
   select(year,month,meantemp, mintemp, maxtemp, precipitation, warm_precip, cool_precip)
   
 temp$date=as.Date(paste(temp$year, temp$month, 01), "%Y %m %d")
@@ -293,6 +293,8 @@ temp_lag=temp%>%
          lag_temp_min=lag(mintemp,order_by=date),
          lag_temp_max=lag(maxtemp,order_by=date),
          lag_ppt=lag(precipitation,order_by=date),
+         lag_ppt_warm_2=lag(warm_precip,n=2,order_by=date),
+         lag_ppt_cool_2=lag(cool_precip,n=2,order_by=date),
          lag_ppt_warm=lag(warm_precip,order_by=date),
          lag_ppt_cool=lag(cool_precip,order_by=date))%>%
   filter(!(year<1988))
@@ -332,7 +334,7 @@ all_bmass12=left_join(all_bmass11,DO_bmass, by=c("month", "year", "treatment"))
 all_bmass13=left_join(all_bmass12,DS_bmass, by=c("month", "year", "treatment"))
 all_bmass2=left_join(all_bmass13,PB_bmass, by=c("month", "year", "treatment"))
 all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))%>%
-  mutate(DIPO_bmass=rowSums(.[24:26]))%>%drop_na()
+  mutate(DIPO_bmass=rowSums(.[26:28]))%>%drop_na()
 
 all_bmass3$years=(all_bmass3$year-mean(all_bmass3$year))/(2*sd(all_bmass3$year))
 all_bmass3$ndvis=(all_bmass3$ndvi-mean(all_bmass3$ndvi))/(sd(all_bmass3$ndvi))
@@ -349,8 +351,11 @@ all_bmass3$dipos=(all_bmass3$DIPO_bmass-mean(all_bmass3$DIPO_bmass))/(2*sd(all_b
 all_bmass3$pbs=(all_bmass3$bmass_PB-mean(all_bmass3$bmass_PB))/(2*sd(all_bmass3$bmass_PB))
 all_bmass3$pps=(all_bmass3$bmass_PP-mean(all_bmass3$bmass_PP))/(2*sd(all_bmass3$bmass_PP))
 all_bmass3$ppts_warm=(all_bmass3$warm_precip-mean(all_bmass3$warm_precip))/(2*sd(all_bmass3$warm_precip))
+all_bmass3$ppts_cool=(all_bmass3$cool_precip-mean(all_bmass3$cool_precip))/(2*sd(all_bmass3$cool_precip))
 all_bmass3$ppts_lag_warm=(all_bmass3$lag_ppt_warm-mean(all_bmass3$lag_ppt_warm))/(2*sd(all_bmass3$lag_ppt_warm))
 all_bmass3$ppts_lag_cool=(all_bmass3$lag_ppt_cool-mean(all_bmass3$lag_ppt_cool))/(2*sd(all_bmass3$lag_ppt_cool))
+all_bmass3$ppts_lag_warm_2=(all_bmass3$lag_ppt_warm_2-mean(all_bmass3$lag_ppt_warm_2))/(2*sd(all_bmass3$lag_ppt_warm_2))
+all_bmass3$ppts_lag_cool_2=(all_bmass3$lag_ppt_cool_2-mean(all_bmass3$lag_ppt_cool_2))/(2*sd(all_bmass3$lag_ppt_cool_2))
 
 #visualization####
 pb_plot=all_bmass3%>%filter(species=="PB")
