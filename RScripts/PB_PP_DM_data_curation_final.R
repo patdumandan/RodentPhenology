@@ -282,7 +282,7 @@ ndvi_lag=prod2%>%
   mutate(lag_ndvi=lag(ndvi,order_by=date))%>%
   filter(!(year<1988))
 
-temp=weather(level="monthly", fill=TRUE, horizon=180)%>%
+temp=weather(level="monthly", fill=TRUE, horizon=60)%>%
   select(year,month,meantemp, mintemp, maxtemp, precipitation, warm_precip, cool_precip)
   
 temp$date=as.Date(paste(temp$year, temp$month, 01), "%Y %m %d")
@@ -385,7 +385,7 @@ ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
-ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
+ggplot(, aes(y=proportion, x=month, col=treatment)) +
   geom_point() + 
   ylab("P(breeding)")+
   stat_smooth(method = 'gam', formula = y ~ s(x))+facet_wrap(~sex)+
