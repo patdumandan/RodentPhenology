@@ -73,6 +73,8 @@ Portal_no_same= no_dup[-which(no_dup$tag %in% sametags),]
 
 Portal_clean=subsetDat(Portal_no_same)
 
+#write.csv(Portal_clean, "Portal_reproductive_indiv.csv")
+
 #Note: this analysis does not necessarily follow the capture history of 
 #individuals, what we want are just the event IDs/observations of reprod.
 #characteristics to determine peak timing of breeding events
@@ -242,7 +244,7 @@ total_proportion_dm_m[is.na(total_proportion_dm_m)] <- 0 #set non-detects to 0
 #females####
 
 DMf=repro_female%>%
-  filter(species=="DM", wgt>=27)%>%arrange(wgt)
+  filter(species=="DM", wgt>=27)
 
 #get count of reproductive males per month per year per trt
 DMf_dat=DMf%>%
@@ -265,10 +267,135 @@ total_proportion_dm_f[is.na(total_proportion_dm_f)] <- 0 #set non-detects to 0
 
 DM_all=rbind(total_proportion_dm_m, total_proportion_dm_f)
 DM_all=as.data.frame(DM_all)%>%
-  mutate(species="DM")
+  mutate(species="DM")%>%
+  filter(treatment=="control")
+
+#DO dataset####
+#males####
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+
+DO=repro_male%>%
+  filter(species=="DO", wgt>=34)
+
+#get count of reproductive males per month per year per trt
+do_dat=DO%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_DO=portal_male%>%
+  filter(species=="DO")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_do_m=right_join(do_dat, total_DO)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion_do_m[is.na(total_proportion_do_m)] <- 0 #set non-detects to 0
+
+#females####
+
+portal_female=Portal_clean%>%filter(sex=="F") #49% of individuals are males
+
+repro_female=portal_female%>%
+  filter(vagina==c("S", "P", "B")| pregnant=="P" | 
+           nipples==c("R", "E", "B") | lactation=="L")
+
+DOf=repro_female%>%
+  filter(species=="DO", wgt >=28)
+
+#get count of reproductive males per month per year per trt
+dof_dat=DOf%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_DOf=portal_female%>%
+  filter(species=="DO")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_do_f=right_join(dof_dat, total_DOf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_do_f[is.na(total_proportion_do_f)] <- 0 #set non-detects to 0
+
+DO_all=rbind(total_proportion_do_m, total_proportion_f)
+DO_all=as.data.frame(DO_all)%>%
+  mutate(species="DO")%>%filter(treatment=="control")
+
+#DS dataset####
+#males####
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+
+DS=repro_male%>%
+  filter(species=="DS", wgt>=100)
+
+#get count of reproductive males per month per year per trt
+ds_dat=DS%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_DS=portal_male%>%
+  filter(species=="DS")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_ds_m=right_join(ds_dat, total_DS)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion_ds_m[is.na(total_proportion_ds_m)] <- 0 #set non-detects to 0
+
+#females####
+
+portal_female=Portal_clean%>%filter(sex=="F") #49% of individuals are males
+
+repro_female=portal_female%>%
+  filter(vagina==c("S", "P", "B")| pregnant=="P" | 
+           nipples==c("R", "E", "B") | lactation=="L")
+
+DSf=repro_female%>%
+  filter(species=="DS", wgt >=78)
+
+#get count of reproductive males per month per year per trt
+dsf_dat=DSf%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_DSf=portal_female%>%
+  filter(species=="DS")%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_ds_f=right_join(dsf_dat, total_DSf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_ds_f[is.na(total_proportion_ds_f)] <- 0 #set non-detects to 0
+
+DS_all=rbind(total_proportion_ds_m, total_proportion_ds_f)
+DS_all=as.data.frame(DS_all)%>%
+  mutate(species="DS")%>%filter(treatment=="control")
 
 #combine PB, PP and DM datasets####
-all_sp=rbind(PB_all, PP_all, DM_all)
+all_sp=rbind(PB_all, PP_all, DM_all, DO_all, DS_all)
+
+#write.csv(all_sp, "PB_PP_dipos_reprod.csv")
 
 #add covariates monthly data####
 
@@ -282,7 +409,7 @@ ndvi_lag=prod2%>%
   mutate(lag_ndvi=lag(ndvi,order_by=date))%>%
   filter(!(year<1988))
 
-temp=weather(level="monthly", fill=TRUE, horizon=60)%>%
+temp=weather(level="monthly", fill=TRUE, horizon=90)%>%
   select(year,month,meantemp, mintemp, maxtemp, precipitation, warm_precip, cool_precip)
   
 temp$date=as.Date(paste(temp$year, temp$month, 01), "%Y %m %d")
@@ -357,12 +484,16 @@ all_bmass3$ppts_lag_cool=(all_bmass3$lag_ppt_cool-mean(all_bmass3$lag_ppt_cool))
 all_bmass3$ppts_lag_warm_2=(all_bmass3$lag_ppt_warm_2-mean(all_bmass3$lag_ppt_warm_2))/(2*sd(all_bmass3$lag_ppt_warm_2))
 all_bmass3$ppts_lag_cool_2=(all_bmass3$lag_ppt_cool_2-mean(all_bmass3$lag_ppt_cool_2))/(2*sd(all_bmass3$lag_ppt_cool_2))
 
+#write.csv(all_bmass3, "reproductive_full_data.csv")
+
 #visualization####
 pb_plot=all_bmass3%>%filter(species=="PB")
 pp_plot=all_bmass3%>%filter(species=="PP")
 dm_plot=all_bmass3%>%filter(species=="DM")
+do_plot=all_bmass3%>%filter(species=="DO")
+ds_plot=all_bmass3%>%filter(species=="DS")
 
-
+#PP and PB####
 ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
   geom_point() +
   ylab("P(breeding)")+
@@ -385,16 +516,40 @@ ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
-ggplot(, aes(y=proportion, x=month, col=treatment)) +
-  geom_point() + 
+#Dipos####
+ggplot(DM_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
   ylab("P(breeding)")+
-  stat_smooth(method = 'gam', formula = y ~ s(x))+facet_wrap(~sex)+
-  ggtitle("DM")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("DM")+ 
   scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
                                           "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
   theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(DO_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("DO")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(DS_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("DS")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
 
 #template code to obtain data for species and sex-specific models####
 PP_male_con=pp_plot%>%filter(treatment=="control", sex=="male")
