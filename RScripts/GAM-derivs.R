@@ -54,28 +54,29 @@ source(tmpf)
 ls()
 
 #control
-want=seq(1, nrow(PB_gam_con), length.out = 200)
-pdat=with(PB_gam_con, data.frame(year=year[want], month=month[want], Time=Time[want]))
-p2=predict(m1$gam, newdata=pdat, type="terms", se.fit = TRUE)
-pdat=transform(pdat, p2=p2$fit[,1], se2=p2$se.fit[,1]) #p2=fit, se2=std.error
+want=seq(1, nrow(PB_female_con), length.out = 200)
+pdat=with(PB_female_con, data.frame(year=year[want], month=month[want], 
+                                    ndvis=ndvis[want],ndvis_lag=ndvis_lag[want],
+                                    ppts_warm=ppts_warm[want], ppts_lag_warm=ppts_lag_warm[want],
+                                    ppts_cool=ppts_cool[want], ppts_lag_cool=ppts_lag_cool[want],
+                                    temps_mean=temps_mean[want], temps_lag_mean=temps_lag_mean[want],
+                                    pps=pps[want], pbs=pbs[want], dipos=dipos[want]))
+p3=predict(pbf_con3, newdata=pdat, type="terms", se.fit = TRUE)
+pdat=transform(pdat, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
 
-df.res=df.residual(m1$gam)
+df.res=df.residual(pbf_con3)
+
 crit.t=qt(0.025, df.res, lower.tail = F)
-pdat=transform(pdat, upper=p2+(crit.t*se2), lower=p2-(crit.t*se2))
+pdat=transform(pdat, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
 
-Term <- "month"
-m1.d <- Deriv(m1)
+m1.d <- Deriv(pbf_con3)
+Term="month"
 m1.dci <- confint(m1.d, term = Term)
-m1.dsig <- signifD(pdat$p2, d = m1.d[[Term]]$deriv,
-                     +m1.dci[[Term]]$upper, m1.dci[[Term]]$lower)
-m1.dsig$incr
-
-plot.Deriv(m1.d, sizer =T)
-lines(pdat$month[order(pdat$month)], pdat$p2[order(pdat$month)], 
-       xlim=range(pdat$month), ylim=range(pdat$p2), pch=16,
-       col="black", lty="dashed")
-
-lines(unlist(m1.dsig$incr) ~ pdat$p2[order(pdat$month)], col = "red", lwd = 3)
+m1.dsig <- signifD(pdat$p3, d = m1.d[[Term]]$deriv,
+                   +m1.dci[[Term]]$upper, m1.dci[[Term]]$lower)
+plot.Deriv(m1.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+abline(v=3.1, type="l", lty=2)
 
 ggplot(PB_dat_M, aes(y=proportion, x=month, col=treatment)) +
   geom_point() +
