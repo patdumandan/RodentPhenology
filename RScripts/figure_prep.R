@@ -84,7 +84,7 @@ pbf1=dwplot(list(pbf_con1, pbf_ex1),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pbm1=dwplot(list(pbm_con1, pbm_ex1),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -95,7 +95,7 @@ pbm1=dwplot(list(pbm_con1, pbm_ex1),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 
@@ -114,7 +114,7 @@ pbf2=dwplot(list(pbf_con2, pbf_ex2),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pbs= "PB biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pbm2=dwplot(list(pbm_con2, pbm_ex2),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -126,7 +126,7 @@ pbm2=dwplot(list(pbm_con2, pbm_ex2),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pbs="PB biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pb2=ggarrange(pbf2,pbm2, nrow=1, common.legend = T, legend="right",
@@ -144,7 +144,7 @@ pbf3=dwplot(list(pbf_con3, pbf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pbs= "PB biomass", pps= "PP biomass", dipos= "Dipodomys sp. biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+ggtitle("A")+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pbm3=dwplot(list(pbm_con3, pbm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -156,13 +156,13 @@ pbm3=dwplot(list(pbm_con3, pbm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pbs="PB biomass", pps= "PP biomass", dipos= "Dipodomys sp. biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+ggtitle("B")+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pb3=ggarrange(pbf3,pbm3, nrow=1, common.legend = T, legend="right",
               font.label = list(size=12))
 
-annotate_figure(pb3, top=text_grob("abiotic + intra- + interspecific competition", face="italic", size=14, hjust=1))
+annotate_figure(pb3, top=text_grob("Bailey's pocket mouse", face="italic", size=14, hjust=1))
 
 #pp models####
 ppm_con1=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool, data=PP_male_con, method = 'REML', weights = abundance, family = binomial)
@@ -192,7 +192,7 @@ ppf1=dwplot(list(ppf_con1, ppf_ex1),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 ppm1=dwplot(list(ppm_con1, ppm_ex1),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -203,7 +203,7 @@ ppm1=dwplot(list(ppm_con1, ppm_ex1),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 
@@ -222,7 +222,7 @@ ppf2=dwplot(list(ppf_con2, ppf_ex2),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pps= "PP biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 ppm2=dwplot(list(ppm_con2, ppm_ex2),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -234,7 +234,7 @@ ppm2=dwplot(list(ppm_con2, ppm_ex2),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pps="PP biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pp2=ggarrange(ppf2,ppm2, nrow=1, common.legend = T, legend="right",
@@ -252,7 +252,7 @@ ppf3=dwplot(list(ppf_con3, ppf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                       pps= "PP biomass",pbs= "PB biomass", dipos= "Dipodomys sp. biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+ggtitle ("C")+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 ppm3=dwplot(list(ppm_con3, ppm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -264,13 +264,13 @@ ppm3=dwplot(list(ppm_con3, ppm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_m
                        ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
                        pps= "PP biomass", pbs="PB biomass", dipos= "Dipodomys sp. biomass"))+
   scale_color_grey(start = .3,end = .7,name = "Treatment",
-                   labels = c("Exclosure","Control"))+
+                   labels = c("Control","Exclosure"))+ggtitle("D")+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pp3=ggarrange(ppf3,ppm3, nrow=1, common.legend = T, legend="right",
               font.label = list(size=12))
 
-annotate_figure(pp3, top=text_grob("abiotic + intra- + interspecific competition", face="italic", size=14, hjust=1))
+annotate_figure(pp3, top=text_grob("desert pocket mouse", face="italic", size=14, hjust=1))
 
 #phenology plots####
 
