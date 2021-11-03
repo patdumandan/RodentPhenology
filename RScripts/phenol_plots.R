@@ -1,9 +1,27 @@
-plot(PB_female_con$proportion~PB_female_con$month, xaxt="n", xlab="month", ylab="P(breeding)")
+#PB female####
+plot(PP_female_con$proportion~PP_female_con$month, xaxt="n", xlab="month", ylab="P(breeding)", pch=16, main="PP female control")
 axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12), srt=90)
-rect(xleft=12, ybottom=0, ytop=1, xright=12, col = rgb(0,0,0.5, 1/4))
-rect(xleft=1, ybottom=0, ytop=1, xright=3, col = rgb(0,0,0.5, 1/4))
-points(PB_female_ex$proportion~PB_female_ex$month, pch=16)
-rect(xleft=2, ybottom=0, ytop=1, xright=4, col = rgb(0,0.5,0, 1/4))
+rect(xleft=11, ybottom=0, ytop=1, xright=12, col = rgb(0,0,0.5, 1/4)) #control
+rect(xleft=1, ybottom=0, ytop=1, xright=1.5, col = rgb(0,0,0.5, 1/4))#control
+rect(xleft=5, ybottom=0, ytop=1, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
+
+plot(PP_female_ex$proportion~PP_female_ex$month, xaxt="n", xlab="month", ylab="P(breeding)", pch=16, main="PP female exclosure")
+axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12), srt=90)
+rect(xleft=8, ybottom=0, ytop=1, xright=12, col = rgb(0,0,0.5, 1/4)) #exclosure incr
+rect(xleft=1, ybottom=0, ytop=1, xright=1.5, col = rgb(0,0,0.5, 1/4)) #exclosure incr
+rect(xleft=5, ybottom=0, ytop=1, xright=8, col = rgb(0.5,0,0, 1/4))#exclosure decr
+
+
+#PB male####
+plot(PP_male_con$proportion~PP_male_con$month, xaxt="n", xlab="month", ylab="P(breeding)")
+axis(1, c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"), at=c(1:12), srt=90)
+
+rect(xleft=1, ybottom=0, ytop=1, xright=4, col = rgb(0,0,0.5, 1/4)) #control
+rect(xleft=1, ybottom=0, ytop=1, xright=2, col = rgb(0,0.5,0, 1/4)) #exclosure incr
+
+rect(xleft=6, ybottom=0, ytop=1, xright=9, col = rgb(0.5,0,0, 1/4))#control decr
+rect(xleft=7, ybottom=0, ytop=1, xright=8, col = rgb(0,0.5,0.5, 1/4))#exclosure decr
+
 
 want=seq(1, nrow(PP_male_ex), length.out = 200)
 pdat=with(PP_male_ex, data.frame(year=year[want], month=month[want], 
