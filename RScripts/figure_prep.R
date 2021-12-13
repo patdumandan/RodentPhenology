@@ -147,6 +147,8 @@ pbf3=dwplot(list(pbf_con3, pbf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_m
                    labels = c("Control","Exclosure"))+ggtitle("A")+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
+pbf3=pbf3%>% annotate_figure(top=text_grob("female", face = "bold"))
+
 pbm3=dwplot(list(pbm_con3, pbm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
                                                    "ppts_warm","ppts_lag_warm", 
                                                    "ppts_cool",  "ppts_lag_cool", "pbs", "pps", "dipos"))%>%
@@ -158,6 +160,8 @@ pbm3=dwplot(list(pbm_con3, pbm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_m
   scale_color_grey(start = .3,end = .7,name = "Treatment",
                    labels = c("Control","Exclosure"))+ggtitle("B")+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+pbm3=pbm3%>% annotate_figure(top=text_grob("male", face = "bold"))
 
 pb3=ggarrange(pbf3,pbm3, nrow=1, common.legend = T, legend="right",
               font.label = list(size=12))
