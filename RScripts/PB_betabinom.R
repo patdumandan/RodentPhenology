@@ -21,6 +21,8 @@ data{
   int <lower=0> y[N];       // reproductive indivs
   int <lower=0>  n[N];       // total males
   vector [N] year;// year
+   vector [N]mon_cos;//cosine month
+  vector [N]mon_sin;//sine of month
   vector[N] treatment;// treatment
   int month[N]; //ID of each month
   int Nmon; //no.of months
@@ -29,10 +31,12 @@ data{
  parameters {
   real alpha;// intercept
   real year_eff; //slope year
-  real trt_eff; //slope treatment effect
-  real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
+ // real trt_eff; //slope treatment effect
+ real<lower=0> sigma_mon[Nmon];//error for random intercept (month)
   real <lower=0> mon_non;//non-centered error term for month
   real <lower=0> phi;
+  real monc_eff;
+  real mons_eff;
   real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive event 
               }
    
@@ -54,7 +58,7 @@ data{
   
   for (i in 1:N){
   
-  repro_mu[i]= inv_logit(alpha+alpha_mon[month[i]]+ year_eff*year[i]+trt_eff*treatment[i]);
+  repro_mu[i]= inv_logit(alpha+alpha_mon[month[i]]*month[i]+ year_eff*year[i]);
   }
   
   A = repro_mu * phi;
@@ -63,11 +67,15 @@ data{
   }
  model {
   //priors
+  alpha~normal(0,1);
   year_eff~ normal (0,1);
-  trt_eff~ normal (0,1);
+//  trt_eff~ normal (0,1);
   mon_non~ normal(0,1);
   sigma_mon~ normal(0,1);
   phi ~normal(0,1);
+  monc_eff~normal(0,1);
+  mons_eff~normal(0,1);
+
   
   //model likelihood:
   
@@ -91,3 +99,16 @@ data{
 #model output####
 print(all_prop_male_mod, pars=c("alpha","alpha_mon", "alpha_sp","trt_eff", "year_eff"))
 saveRDS(all_prop_male_mod, "all_sp_betabinom_mod.RDS")
+
+y=PB_dat_M$proportion
+yrep2=rstan::extract(pb_prop_male_mod)$repro_mu
+con_pb=yrep2[,which(PB_dat_M$treatment=="control"& PB_dat_M$month==3)]
+con_pbmat=as.matrix(con_pb)
+con_pbs=con_pbmat[1:300,]
+
+matplot(t(con_pbs), type="l", col="grey", main="PB control (March)")
+mean_con_pb=apply(con_pb, 2, mean)
+con_pb_obs=PB_dat_M%>%filter(treatment=="control"& month==3)
+lines(mean_con_pb~c(1:length(mean_con_pb)), col="blue")
+points(con_pb_obs$proportion, col="black", cex=1 )
+ppc_dens_overlay(y, yrep2)

@@ -148,8 +148,91 @@ rect(xleft=7, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control dec
 
 #FIGURE 3####
 
-#PB####
-pbd_f_con=dwplot(list(dipof_con3,pbf_con3),style="distribution",vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
+#figure 3
+#PB ####
+pbf=dwplot(list(pbf_con3,pbf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
+                                                 "ppts_warm","ppts_lag_warm", 
+                                                 "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
+                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
+                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
+                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
+                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Treatment",
+                     values=c("sky blue", "green"),
+                     labels = c("control","exclosure"))+
+  scale_fill_manual(name = "Treatment",
+                    values=c("sky blue", "green"),
+                    labels = c("control","exclosure"))+
+  ggtitle("female")+geom_label(label="A", x=3, y=11, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+pbm=dwplot(list(pbm_con3,pbm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
+                                                 "ppts_warm","ppts_lag_warm", 
+                                                 "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
+                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
+                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
+                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
+                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Treatment",
+                     values=c("sky blue", "green"),
+                     labels = c("control","exclosure"))+
+  scale_fill_manual(name = "Treatment",
+                    values=c("sky blue", "green"),
+                    labels = c("control","exclosure"))+
+  ggtitle("male")+geom_label(label="B", x=3, y=11, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+
+pb1=ggarrange(pbf, pbm + theme(axis.text.y = element_blank()),widths = c(0.35, 0.25), nrow=1, common.legend = T, legend="bottom",
+              font.label = list(size=12))
+pb1
+annotate_figure(pb1, top=text_grob("Bailey's pocket mouse", face="bold"))
+
+#PP####
+ppf=dwplot(list(ppf_con3,ppf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
+                                                 "ppts_warm","ppts_lag_warm", 
+                                                 "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
+                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
+                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
+                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
+                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Treatment",
+                     values=c("sky blue", "green"),
+                     labels = c("control","exclosure"))+
+  scale_fill_manual(name = "Treatment",
+                    values=c("sky blue", "green"),
+                    labels = c("control","exclosure"))+
+  geom_label(label="C", x=3, y=11, label.size = NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+ppm=dwplot(list(ppm_con3,ppm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
+                                                 "ppts_warm","ppts_lag_warm", 
+                                                 "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
+                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
+                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
+                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
+                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Treatment",
+                     values=c("sky blue", "green"),
+                     labels = c("control","exclosure"))+
+  scale_fill_manual(name = "Treatment",
+                    values=c("sky blue", "green"),
+                    labels = c("control","exclosure"))+
+  geom_label(label="D", x=1.5, y=11, label.size = NA)+xlim(-4,4)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+pp1=ggarrange(ppf, ppm + theme(axis.text.y = element_blank()),widths = c(0.35, 0.25), nrow=1, common.legend = T, legend="bottom",
+              font.label = list(size=12))
+pp1
+annotate_figure(pp1, top=text_grob("desert pocket mouse", face="bold"))
+
+#FIGURE 4####
+#control####
+pbd_f_con=dwplot(list(dipof_con3,pbf_con3, ppf_con3),style="distribution",vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
                                                                                "ppts_warm","ppts_lag_warm", 
                                                                                "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
   relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
@@ -180,7 +263,7 @@ pbd_m_con=dwplot(list(dipom_con3,pbm_con3),style="distribution",vars_order = c("
   scale_fill_manual(name = "Species",
                     values=c("sky blue", "green"),
                     labels = c("kangaroo rats","Bailey's pocket mice"))+
-  ggtitle("male")+
+  ggtitle("male")+geom_label(label="A", x=3, y=6, label.size = NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 pb1=ggarrange(pbd_f_con, pbd_m_con+ theme(axis.text.y = element_blank()),widths = c(0.35, 0.25), nrow=1, common.legend = T, legend="bottom",
@@ -189,48 +272,45 @@ annotate_figure(pb1, top=text_grob("control", face="bold"))
 
 #exclosure####
 
-#female####
-pbpp_f_ex=dwplot(list(pbf_ex3,ppf_ex3),style="distribution",vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
-                                                                           "ppts_warm","ppts_lag_warm", 
-                                                                           "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
-  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
-                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
-                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
-                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+pbd_f_ex=dwplot(list(pbf_ex3, ppf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean",
+                                                                           "ppts_warm",
+                                                                           "ppts_cool", "pbs","pps"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)", 
+                       ppts_cool= "cool precipitation (lag 0)", 
+                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass"))+
   scale_color_manual(name = "Species",
                      values=c("green", "orange"),
                      labels = c("Bailey's pocket mice", "desert pocket mice"))+
   scale_fill_manual(name = "Species",
-                    values=c("green", "orange"),
+                    values=c( "green", "orange"),
                     labels = c("Bailey's pocket mice", "desert pocket mice"))+
-  ggtitle("female")+
+  ggtitle("female")+geom_label(label="C", x=4, y=8.75, label.size = NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
-#male####
-pbpp_m_ex=dwplot(list(pbm_ex3,ppm_ex3),style="distribution",vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
-                                                                           "ppts_warm","ppts_lag_warm", 
-                                                                           "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
-  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
-                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
-                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
-                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+pbd_m_ex=dwplot(list(pbm_ex3, ppm_ex3),style="distribution", vars_order = c("ndvis", "temps_mean",
+                                                                            "ppts_warm",
+                                                                            "ppts_cool", "pbs","pps"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)", 
+                       ppts_cool= "cool precipitation (lag 0)", 
+                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass"))+
   scale_color_manual(name = "Species",
-                     values=c("green", "orange"),
+                     values=c( "green", "orange"),
                      labels = c("Bailey's pocket mice", "desert pocket mice"))+
   scale_fill_manual(name = "Species",
                     values=c("green", "orange"),
                     labels = c("Bailey's pocket mice", "desert pocket mice"))+
-  ggtitle("male")+
+  ggtitle("male")+geom_label(label="D", x=2.5, y=8, label.size = NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
-pbpp=ggarrange(pbpp_f_ex, pbpp_m_ex+theme(axis.text.y = element_blank()),widths = c(0.35, 0.25), nrow=1, common.legend = T, legend="bottom",
-               font.label = list(size=12))
+ex_mf=ggarrange(pbd_f_ex, pbd_m_ex+ theme(axis.text.y = element_blank()),widths = c(0.35, 0.20),heights = c(0.2, 0.2), nrow=1, common.legend = T, legend="bottom",
+                font.label = list(size=12), align="h")
+annotate_figure(ex_mf, top=text_grob("exclosure", face="bold"))
 
-annotate_figure(pbpp, top=text_grob("exclosure", face="bold"))
-
-#FIGURE 4####
+#APPENDIX FIG 1####
 
 #PP####
 ppd_f_con=dwplot(list(dipof_con3,ppf_con3),style="distribution",vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -313,10 +393,6 @@ pbpp=ggarrange(pbpp_f_ex, pbpp_m_ex+theme(axis.text.y = element_blank()),widths 
                font.label = list(size=12))
 
 annotate_figure(pbpp, top=text_grob("exclosure", face="bold"))
-
-
-
-#APPENDIX FIGURE 3####
 
 #PB####
 pbf3=dwplot(list(ppf_con3, ppf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
