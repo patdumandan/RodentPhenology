@@ -232,7 +232,7 @@ annotate_figure(pp1, top=text_grob("desert pocket mouse", face="bold"))
 
 #FIGURE 4####
 #control####
-plot_con1=dwplot(list(dipof_con3,pbf_con3, ppf_con3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+plot_con1=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
                                                                                          "ppts_warm",
                                                                                          "ppts_cool", "pbs","pps", "dipos"))%>%
   relabel_predictors(c(ndvis="NDVI (lag 0)",
@@ -638,3 +638,137 @@ AA32=a32+geom_text(x=11, y=0.73, col="black", label="F")
 
 a22=ggarrange(AA12,AA22,AA32, nrow=1, common.legend = T, legend="bottom")
 annotate_figure(a22, top=text_grob("male", face="bold"))
+#new fig4 and 5####
+
+#abiotic factors####
+
+#PB plots####
+plot_con11=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)", 
+                       ppts_cool= "cool precipitation (lag 0)"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("female")+geom_label(label="A", x=4, y=8, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con12=dwplot(list(dipof_con3,pbm_con3, pbm_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)", 
+                       ppts_cool= "cool precipitation (lag 0)"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("male")+geom_label(label="B", x=2, y=8, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con1=ggarrange(plot_con1, plot_con2+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
+                    font.label = list(size=12))
+annotate_figure(plot_con1, top=text_grob("Bailey's pocket mouse", face="bold"))
+
+#PP plots####
+
+plot_con21=dwplot(list(dipof_con3,ppf_con3, ppf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)", 
+                       ppts_cool= "cool precipitation (lag 0)"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("female")+geom_label(label="C", x=4, y=8, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con22=dwplot(list(dipof_con3,ppm_con3, ppm_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)", 
+                       ppts_cool= "cool precipitation (lag 0)"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("male")+geom_label(label="D", x=2, y=8, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con2=ggarrange(plot_con21, plot_con22+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
+                    font.label = list(size=12))
+annotate_figure(plot_con22, top=text_grob("desert pocket mouse", face="bold"))
+
+#biotic factors####
+
+#PB plots####
+plot_con31=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_order = c( "pbs","pps", "dipos"))%>%
+  relabel_predictors(c( pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("female")+geom_label(label="A", x=5, y=6, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con32=dwplot(list(dipof_con3,pbm_con3, pbm_ex3),style="distribution",vars_order = c( "pbs","pps", "dipos"))%>%
+  relabel_predictors(c( pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("male")+geom_label(label="B", x=5, y=5.7, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con3=ggarrange(plot_con31, plot_con32+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
+                    font.label = list(size=12))
+annotate_figure(plot_con3, top=text_grob("Bailey's pocket mouse", face="bold"))
+
+#PP plots####
+plot_con41=dwplot(list(dipof_con3,ppf_con3, ppf_ex3),style="distribution",vars_order = c( "pbs","pps", "dipos"))%>%
+  relabel_predictors(c( pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("female")+geom_label(label="C", x=4, y=5.5, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con42=dwplot(list(dipof_con3,ppm_con3, ppm_ex3),style="distribution",vars_order = c( "pbs","pps", "dipos"))%>%
+  relabel_predictors(c( pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+  scale_color_manual(name = "Species",
+                     values=c("sky blue", "green", "orange"),
+                     labels = c("kangaroo rats","control", "exclosure"))+
+  scale_fill_manual(name = "Species",
+                    values=c("sky blue", "green","orange"),
+                    labels = c("kangaroo rats","control", "exclosure"))+
+  ggtitle("male")+geom_label(label="D", x=3, y=6, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+
+plot_con4=ggarrange(plot_con41, plot_con42+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
+                    font.label = list(size=12))
+annotate_figure(plot_con4, top=text_grob("desert pocket mouse", face="bold"))
