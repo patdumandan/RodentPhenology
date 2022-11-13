@@ -1,0 +1,372 @@
+---
+title: "Phenological traits"
+author: "Pat Dumandan"
+date: "11/03/2020"
+output: html_document
+---
+
+```{r, warning=FALSE,message=FALSE}
+library(devtools)
+library(dplyr)
+library(phest)
+library(ggplot2)
+library(date)
+#install_github("willpearse/phest")
+
+Portal_rodent=read.csv("./PortalData/Rodents/Portal_rodent.csv")
+Portal_plots=read.csv("./PortalData/SiteandMethods/Portal_plots.csv")
+portal1=inner_join(Portal_rodent, Portal_plots, by= c("plot", "month", "year"))
+#head(portal1)
+```
+
+#### PB control and exclosure
+```{r}
+PBmaleex=portal1%>%
+  filter(species=="PB", testes=="S",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species, testes)
+
+#convert to Julian dates
+PBdate=as.data.frame(mdy.date(PBmaleex$month, PBmaleex$day, PBmaleex$year))
+PBmaleex1=cbind(PBmaleex, PBdate)
+PBmaleex1$Julian=PBmaleex1$`mdy.date(PBmaleex$month, PBmaleex$day, PBmaleex$year)`
+
+PBmalecon=portal1%>%
+  filter(species=="PB", testes=="S",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PBcdate=as.data.frame(mdy.date(PBmalecon$month, PBmalecon$day, PBmalecon$year))
+PBmalecon1=cbind(PBmalecon, PBcdate)
+PBmalecon1$Julian=PBmalecon1$`mdy.date(PBmalecon$month, PBmalecon$day, PBmalecon$year)`
+
+#estimate onset
+phest::weib.limit(PBmalecon1$Julian)
+
+date.mdy(13500) 
+
+```
+
+#### PP Male control and exclosure
+
+```{r}
+PPmaleex=portal1%>%
+  filter(species=="PP", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PPdate=as.data.frame(mdy.date(PPmaleex$month, PPmaleex$day, PPmaleex$year))
+PPmaleex1=cbind(PPmaleex, PPdate)
+PPmaleex1$Julian=PPmaleex1$`mdy.date(PPmaleex$month, PPmaleex$day, PPmaleex$year)`
+
+#estimate onset
+phest::weib.limit(PPmaleex1$Julian, upper=T)
+date.mdy(21765)
+
+PPmalecon=portal1%>%
+  filter(species=="PP", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PPcdate=as.data.frame(mdy.date(PPmalecon$month, PPmalecon$day, PPmalecon$year))
+PPmalecon1=cbind(PPmalecon, PPcdate)
+PPmalecon1$Julian=PPmalecon1$`mdy.date(PPmalecon$month, PPmalecon$day, PPmalecon$year)`
+
+#estimate onset
+phest::weib.limit(PPmalecon1$Julian, upper=T)
+
+date.mdy(21765)  
+
+```
+
+#### PF male control and exclosure
+
+```{r}
+PFmaleex=portal1%>%
+  filter(species=="PF", testes=="M",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PFdate=as.data.frame(mdy.date(PFmaleex$month, PFmaleex$day, PFmaleex$year))
+PFmaleex1=cbind(PFmaleex, PFdate)
+PFmaleex1$Julian=PFmaleex1$`mdy.date(PFmaleex$month, PFmaleex$day, PFmaleex$year)`
+
+#estimate onset
+phest::weib.limit(PFmaleex1$Julian, upper=T)
+date.mdy(22798)
+
+PFmalecon=portal1%>%
+  filter(species=="PF", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PFcdate=as.data.frame(mdy.date(PFmalecon$month, PFmalecon$day, PFmalecon$year))
+PFmalecon1=cbind(PFmalecon, PFcdate)
+PFmalecon1$Julian=PFmalecon1$`mdy.date(PFmalecon$month, PFmalecon$day, PFmalecon$year)`
+
+#estimate onset
+phest::weib.limit(PFmalecon1$Julian, upper=T)
+
+date.mdy(21292)  
+
+```
+
+#### PE male control and exclosure
+
+```{r}
+PEmaleex=portal1%>%
+  filter(species=="PE", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PEdate=as.data.frame(mdy.date(PEmaleex$month, PEmaleex$day, PEmaleex$year))
+PEmaleex1=cbind(PEmaleex, PEdate)
+PEmaleex1$Julian=PEmaleex1$`mdy.date(PEmaleex$month, PEmaleex$day, PEmaleex$year)`
+
+#estimate onset
+phest::weib.limit(PEmaleex1$Julian, upper=T)
+#THIS GIVES ME AN ESTIMATE NOT JUST UPPER AND LOWER CIs! but why??
+
+date.mdy(23589)
+
+PEmalecon=portal1%>%
+  filter(species=="PE", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PEcdate=as.data.frame(mdy.date(PEmalecon$month, PEmalecon$day, PEmalecon$year))
+PEmalecon1=cbind(PEmalecon, PEcdate)
+PEmalecon1$Julian=PEmalecon1$`mdy.date(PEmalecon$month, PEmalecon$day, PEmalecon$year)`
+
+#estimate onset
+phest::weib.limit(PEmalecon1$Julian, upper=T)
+
+date.mdy(20826)  
+```
+
+#### PM male control and exclosure
+
+```{r}
+PMmaleex=portal1%>%
+  filter(species=="PM", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PMdate=as.data.frame(mdy.date(PMmaleex$month, PMmaleex$day, PMmaleex$year))
+PMmaleex1=cbind(PMmaleex, PMdate)
+PMmaleex1$Julian=PMmaleex1$`mdy.date(PMmaleex$month, PMmaleex$day, PMmaleex$year)`
+
+#estimate onset
+phest::weib.limit(PMmaleex1$Julian, upper=T)
+#THIS GIVES ME AN ESTIMATE NOT JUST UPPER AND LOWER CIs! but why??
+
+date.mdy(21654.13)
+
+PMmalecon=portal1%>%
+  filter(species=="PM", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+PMcdate=as.data.frame(mdy.date(PMmalecon$month, PMmalecon$day, PMmalecon$year))
+PMmalecon1=cbind(PMmalecon, PMcdate)
+PMmalecon1$Julian=PMmalecon1$`mdy.date(PMmalecon$month, PMmalecon$day, PMmalecon$year)`
+
+#estimate onset
+phest::weib.limit(PMmalecon1$Julian, upper=T)
+
+date.mdy(7764)  
+```
+
+#### RM male control and exclosure
+
+``` {r}
+RMmaleex=portal1%>%
+  filter(species=="RM", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+RMdate=as.data.frame(mdy.date(RMmaleex$month, RMmaleex$day, RMmaleex$year))
+RMmaleex1=cbind(RMmaleex, RMdate)
+RMmaleex1$Julian=RMmaleex1$`mdy.date(RMmaleex$month, RMmaleex$day, RMmaleex$year)`
+
+#estimate onset
+phest::weib.limit(RMmaleex1$Julian, upper=T)
+#THIS GIVES ME AN ESTIMATE NOT JUST UPPER AND LOWER CIs! but why??
+
+date.mdy(21832)
+
+RMmalecon=portal1%>%
+  filter(species=="RM", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+RMcdate=as.data.frame(mdy.date(RMmalecon$month, RMmalecon$day, RMmalecon$year))
+RMmalecon1=cbind(RMmalecon, RMcdate)
+RMmalecon1$Julian=RMmalecon1$`mdy.date(RMmalecon$month, RMmalecon$day, RMmalecon$year)`
+
+#estimate onset
+phest::weib.limit(RMmalecon1$Julian, upper=T)
+
+date.mdy(21330)  
+
+```
+
+#### DM male control and exclosure
+Ooohh, I didn't know K-rats werent **totally** excluded in exclosures
+**breeding season for Dipodomys in California: late winter to early spring (Kenagy, 1985)**
+```{r}
+DMmaleex=portal1%>%
+  filter(species=="DM", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+DMdate=as.data.frame(mdy.date(DMmaleex$month, DMmaleex$day, DMmaleex$year))
+DMmaleex1=cbind(DMmaleex, DMdate)
+DMmaleex1$Julian=DMmaleex1$`mdy.date(DMmaleex$month, DMmaleex$day, DMmaleex$year)`
+
+#estimate onset
+phest::weib.limit(DMmaleex1$Julian) #, upper=T)
+date.mdy(6495)
+
+DMmalecon=portal1%>%
+  filter(species=="DM", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+DMdate=as.data.frame(mdy.date(DMmalecon$month, DMmalecon$day, DMmalecon$year))
+DMmalecon1=cbind(DMmalecon, DMdate)
+DMmalecon1$Julian=DMmalecon1$`mdy.date(DMmalecon$month, DMmalecon$day, DMmalecon$year)`
+
+#estimate onset
+phest::weib.limit(DMmaleex1$Julian, upper=T)
+date.mdy(22725)
+#warning message:Repeated earliest measurements; applying correction
+
+#count how many per month
+jan=DMmalecon%>%
+    filter(month==9)
+```
+
+#### DO male control and exclosure
+**breeding season Feb-Jun (Johnston, 1956)**
+
+```{r}
+DOmaleex=portal1%>%
+  filter(species=="DO", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+DOdate=as.data.frame(mdy.date(DOmaleex$month, DOmaleex$day, DOmaleex$year))
+DOmaleex1=cbind(DOmaleex, DOdate)
+DOmaleex1$Julian=DOmaleex1$`mdy.date(DOmaleex$month, DOmaleex$day, DOmaleex$year)`
+
+#estimate onset
+phest::weib.limit(DOmaleex1$Julian, upper=T)
+date.mdy(21618)
+
+DOmalecon=portal1%>%
+  filter(species=="DO", testes=="R",treatment== "control", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+
+#convert to Julian dates
+DOdate=as.data.frame(mdy.date(DOmalecon$month, DOmalecon$day, DOmalecon$year))
+DOmalecon1=cbind(DOmalecon, DOdate)
+DOmalecon1$Julian=DOmalecon1$`mdy.date(DOmalecon$month, DOmalecon$day, DOmalecon$year)`
+
+#estimate onset
+phest::weib.limit(DOmalecon1$Julian, upper=T)
+date.mdy(22027)
+#warning message:Repeated earliest measurements; applying correction
+
+#count how many per month
+jan=DOmaleex%>%
+    filter(month==9)
+
+```
+#### DS male control and exclosure
+
+```{r}
+DSmaleex=portal1%>%
+  filter(species=="DS", testes=="R",treatment== "exclosure", !(age=="J"))%>%
+  select(month, day, year, treatment, species)
+```
+**Maybe not include? too few samples (only 6 events)**
+
+## Plots for repro. timing
+
+```{r}
+maletraits=read.csv("male_S_month.csv")
+
+DMmaletraits=maletraits%>%
+  filter(Species=="DM")
+
+DMmaletraits%>%
+  ggplot(data=DMmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+PBmaletraits=maletraits%>%
+  filter(Species=="PB")
+
+PBmaletraits%>%
+  ggplot(data=PBmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+DOmaletraits=maletraits%>%
+  filter(Species=="DO")
+
+DOmaletraits%>%
+  ggplot(data=DOmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+PPmaletraits=maletraits%>%
+  filter(Species=="PP")
+
+PPmaletraits%>%
+  ggplot(data=PPmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+PFmaletraits=maletraits%>%
+  filter(Species=="PF")
+
+PFmaletraits%>%
+  ggplot(data=PFmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+PEmaletraits=maletraits%>%
+  filter(Species=="PE")
+
+PEmaletraits%>%
+  ggplot(data=PEmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+PMmaletraits=maletraits%>%
+  filter(Species=="PM")
+
+PMmaletraits%>%
+  ggplot(data=PMmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+RMmaletraits=maletraits%>%
+  filter(Species=="RM")
+
+RMmaletraits%>%
+  ggplot(data=RMmaletraits, mapping=aes(x=reorder(Month, Month_num), y=Count, fill=Treatment))+
+  geom_col(position=position_dodge())+
+  xlab("Month")+ylab("No.of event observations")
+
+``` 
+
+## *TO FIGURE OUT/ TO DISCUSS WITH MORGAN:*  
+* why I'm not getting median estimates for the onset for some species (sample size?)  (maybe my input data is weird??)
+* how to get estimates that does not include year (but Julian date...)  
+* should I include DS (but too few samples in exclosure <10)
+* Why are there K-rat species in exclosures? how should I account for that?  
+* if i want to see if the onset of events is moving earlier/later, should I just focus on identifying the first observation date per month per year?  
+* should I choose the months with greatest proportion of reproductive trait observations, choose when the earliest is for that period and then collect dates annually?  
+* will it be interesting to know the proportion of individuals that exhibit reproductive characteristics annually, and see if there is a pattern in control and exclosure set-ups, and/or see if there are fewer/more of them being reproductively prepared? 

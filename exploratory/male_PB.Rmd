@@ -1,0 +1,342 @@
+---
+title: "PB prelim analysis"
+author: "Pat Dumandan"
+---
+
+```{r, setup, include=FALSE}
+require(knotr)
+knitr::opts_chunk$set(echo = TRUE)
+getwd()
+```
+
+### **Data Curation**
+```{r warning=FALSE, message=FALSE}
+require(portalr)
+require(dplyr)
+require(ggplot2)
+require (lme4)
+require(rstan)
+require(brms)
+require(rstanarm)
+require(bayesplot)
+
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+####load cleaned individual-level data####
+Portal_data_indiv=summarize_individual_rodents(
+  path = get_default_data_path(),
+  clean = TRUE,
+  type = "Rodents",
+  length = "all",
+  unknowns = FALSE,
+  time = "date",
+  fillweight = FALSE,
+  min_plots = 1,
+  min_traps = 1,
+  download_if_missing = TRUE,
+  quiet = FALSE
+)%>%filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month))
+
+# add columns for reproductive traits
+Portal_data=load_rodent_data(clean = TRUE)
+Portal_rodent=Portal_data[["rodent_data"]]%>%mutate(month=factor(month))%>%
+  filter(!is.na(sex))
+
+#create full dataset without removal plots
+portal1=left_join(Portal_data_indiv, Portal_rodent)%>%
+  filter(!(treatment=="removal")& !is.na(treatment)& !is.na(sex))%>%
+  mutate(month=as.character(month), Month=recode(month, "1"= "Jan", "2"="Feb", "3"="Mar", "4"="Apr",
+                                           "5"="May","6"="Jun", "7"="Jul", "8"="Aug", "9"="Sept",
+                                           "10"="Oct","11"="Nov", "12"="Dec"))%>%
+  select(period, month, Month, day, year, plot, stake,
+         treatment, species, sex, reprod, vagina, nipples,lactation, pregnant, testes,hfl,wgt, tag)
+
+str(portal1)
+```
+
+### **Data Manipulation** 
+
+```{r warning=FALSE, message=FALSE}
+portal_male=portal1%>%filter(sex=="M") #49% of individuals are males
+head(portal_male)
+
+####determine threshold for breeding adult male individuals####
+
+target_repro=c("S", "M", "R")
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+head(repro_male)
+
+#BA=repro_male%>%
+#  filter(species=="BA")%>%
+#  arrange(wgt)
+
+#size thresholds####
+BA=repro_male%>%
+  filter(species=="BA", wgt >=6)
+
+DM=repro_male%>%
+  filter(species=="DM", wgt >=15)
+
+DO=repro_male%>%
+  filter(species=="DO", wgt >=29)
+
+DS=repro_male%>%
+  filter(species=="DS", wgt >=12)
+
+NEA=repro_male%>%
+  filter(species=="NA", wgt >=121)
+
+OL=repro_male%>%
+  filter(species=="OL", wgt >=19)
+
+OT=repro_male%>%
+  filter(species=="OT", wgt >=10)
+
+PH=repro_male%>%
+  filter(species=="PH", wgt >=18)
+
+PL=repro_male%>%
+  filter(species=="PL", wgt >=20)
+
+PB=repro_male%>%
+  filter(species=="PB", wgt >=16)
+
+PP=repro_male%>%
+  filter(species=="PP", wgt >=10)
+
+PE=repro_male%>%
+  filter(species=="PE", wgt >=7)
+
+PI=repro_male%>%
+  filter(species=="PI", wgt >=15)
+
+PF=repro_male%>%
+  filter(species=="PF", wgt >=4)
+
+PM=repro_male%>%
+  filter(species=="PM", wgt >=11)
+
+RM=repro_male%>%
+  filter(species=="RM", wgt >=4)
+
+RF=repro_male%>%
+  filter(species=="RF", wgt >=11)
+
+RO=repro_male%>%
+  filter(species=="RO", wgt >=6)
+
+SF=repro_male%>%
+  filter(species=="SF", wgt >=39)
+
+SH=repro_male%>%
+  filter(species=="SH", wgt >=51)
+
+SO=repro_male%>%
+  filter(species=="SO", wgt >=68)
+
+#create full dataset with all species
+
+full_repro_male_dat=rbind(SO,SH,SF,RO,RM,RF,PP,PM,PL,PH,PF,PE,PB,OT,OL,NEA,DS,DO,DM,BA, PI)
+full_repro_male_dat=as.data.frame(full_repro_male_dat)
+head(full_repro_male_dat)
+
+####calculate proportion of reproductive individuals####
+
+#get count of reproductive males for each species per month per year per trt
+repro_dat=full_repro_male_dat%>%
+  group_by(month, year, treatment, species)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_rodents=portal_male%>%
+  group_by(month,year, treatment, species)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion=right_join(repro_dat, total_rodents)%>%
+  mutate(proportion=reproductive/abundance)%>%
+  arrange(proportion)
+head(total_proportion)
+#length(unique(total_proportion$species)) #21 spp
+#max(total_proportion$proportion, na.rm=T) #1
+```
+
+### **Data Visualization** 
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+#sample using PB data only
+PB_dat_M=total_proportion%>%filter(species=="PB", !(treatment=="spectabs"))
+plot(PB_dat_M$proportion~PB_dat_M$year)
+####plot PB proportion across all years per trt type
+PB_dat_M%>%
+  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
+  geom_point()+geom_smooth(se = FALSE, method = 'loess')
+
+####plot PB proportion across all years per trt type per month
+PB_dat_M%>%
+  ggplot(mapping = aes(x=year, y=proportion, colour=treatment))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)
+PB_dat_M=as.data.frame(PB_dat_M)
+####plot PB proportion across all years per month per trt type
+#control
+PB_dat_M_con=total_proportion%>%filter(species=="PB", treatment=="control")
+PB_dat_M_con%>%
+  ggplot(mapping = aes(x=year, y=proportion))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)+ggtitle("PB male control")
+
+#exclosure
+PB_dat_M_ex=total_proportion%>%filter(species=="PB", treatment=="exclosure")
+PB_dat_M_ex%>%
+  ggplot(mapping = aes(x=year, y=proportion))+
+  geom_point()+geom_smooth(se = FALSE, method = 'lm')+
+  facet_wrap(~month)+ggtitle("PB male exclosure")
+
+```
+
+### Data Analysis  
+
+#### simple binomial regression with logit link (intercept only)  
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+mod_int=glm(proportion~1, data=PB_dat_M, family=binomial(link="logit"))
+summary(mod_int) #AIC: 163.72
+```  
+
+#### binomial regression with year and trt
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+
+mod_int2=glm(proportion~1+years+trt, data=PB_dat_M, family=binomial(link="logit"))
+summary(mod_int2) #AIC: 159.94
+```  
+
+#### binomial regression with year and trt and month as circular variable
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PB_dat_M$month=as.integer(PB_dat_M$month)
+mod_int3=glm(proportion~1+years+trt+cospi(month)+sinpi(month), data=PB_dat_M, family=binomial(link="logit"))
+summary(mod_int3) #AIC: 161.95
+```  
+
+#### hierarchical binomial regression with year and trt as covar and month as random intercept
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PB_dat_M$month=as.integer(PB_dat_M$month)
+mod_int4=glmer(proportion~1+years+trt+(1|month), data=PB_dat_M, family=binomial(link="logit"))
+summary(mod_int4) #AIC: 101.8
+```  
+
+*problem with binomial is: assumption that the probability of the number of reproductive individuals(proportion) is constant*  
+*beta-binomial allows us to model the proportion/probability of reproductive observations as a free parameter*
+
+#### simple beta-binomial (intercept only)
+```{r warning=FALSE, message=FALSE}
+mod_int5=readRDS("~/ReproPhenology/model_output/PB_intercept.RDS")
+print(mod_int5, pars=c("alpha", "phi"))
+
+#posterior predictive checks
+y=PB_dat_M$proportion
+yrep=extract(mod_int5$pred_y)
+ppc_overlay(y, yrep)
+
+#mod_int5=stan(model_code="
+#   data{
+#  int<lower=0> N; // no.of obs
+#  int <lower=0> y[N];       // reproductive indivs
+#  int <lower=0>  n[N];       // total males
+# }
+                
+# parameters {
+#  real alpha;// intercept
+#  real <lower=0> phi;
+#  real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive indivs 
+#              }
+   
+ # transformed parameters{
+#  vector <lower=0, upper=1> [N] repro_mu; //so we can add statement describing proportion (not able to do in parameters block)
+#  vector <lower=0> [N] A;
+#  vector <lower=0> [N] B;
+
+#  //model:
+  
+#  for (i in 1:N){
+  
+#  repro_mu[i]= inv_logit(alpha);
+#  }
+  
+#  A = repro_mu * phi;
+#  B = (1 - repro_mu)* phi;
+#}
+
+# model {
+#  //priors
+# alpha~normal(0,1);  
+# phi ~normal(0,1);
+  
+#  //model likelihood:
+  
+#  pred_repro ~ beta(A, B); // survival estimate, beta dist.
+#  y~binomial(n, pred_repro); //no.of survivors drawn from binomial dist; based on sample size and reported survival estimate
+ 
+# }
+  
+#  generated quantities {
+  
+# real pred_y [N];//predictions on proportions
+#  real log_lik [N];// for looic calculations
+  
+ #   pred_y = beta_rng(A, B);
+    
+#    for (x in 1:N){
+#    log_lik[x]= beta_lpdf(pred_repro[x]| A[x], B[x]);}
+#   }    ", data=dat_list, chains=4, iter=3000)
+```
+  
+*model performance: loo(m1_loo) #-562.9 +/- 26.2*  
+
+#### beta-binomial with year and treatment as predictors
+
+```{r warning=FALSE, message=FALSE}
+PB_intyrtrt=readRDS("./model_output/PB_intyrtrt.RDS")
+print(PB_intyrtrt, pars=c("alpha", "phi", "year_eff", "trt_eff"))
+# parameters {
+#  real alpha;// intercept
+#  real year_eff; //slope year
+#  real trt_eff; //slope treatment effect
+#  real <lower=0> phi;
+# real <lower=0, upper=1> pred_repro[N] ;//proportion of reproductive event 
+#              }
+
+# transformed parameters {
+#  //model:
+  
+#  for (i in 1:N){
+  
+#  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]);
+#  }}
+
+```
+*model performance: loo(m3_loo) #-592.4+27.8*  
+
+### beta-binomial with year, treatment, and trigonometric functions to account for periodicity(month)  
+*trigonometri
+```{r warning=FALSE, message=FALSE}
+#mon_cos= cos(2*pi*(month/12))
+#sin_cos= sin(2*pi*(month/12))
+ # model
+#  for (i in 1:N){
+  
+#  repro_mu[i]= inv_logit(alpha+ year_eff*year[i]+trt_eff*treatment[i]+monc_eff*mon_cos[i]+mons_eff*mon_sin[i]);
+#  }
+
+PB_intyrtrtmon=readRDS("./model_output/PB_intyrtrtmon.RDS")
+```
+loo(m3_loo) #-592.3+27.7

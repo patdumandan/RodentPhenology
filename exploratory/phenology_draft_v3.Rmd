@@ -1,0 +1,523 @@
+---
+title: "The effects of biotic interactions on the breeding phenology of desert rodents"
+author: "Pat Dumandan"
+output: word_document
+---
+**Introduction**    
+The impacts of recent climate change are largely implicated to shifts in biodiversity patterns (Bellard et al. 2012, Leadley et al. 2010). As such, identifying the mechanisms that underlie these links is often central to modern ecological research. Commonly, the abundance patterns of different species are correlated with various abiotic and biotic predictors (Grinnell 1917, Hutchinson 1957, MacArthur 1968). Several studies have also explored how phenology, or the timing of different life-history events (e.g., breeding, migration, dormancy) relate to environmental factors (Charmantier et al. 2008, Parmesan 2006). However, despite the recognition of the importance of abiotic factors in driving the onset and duration of phenological stages in the annual life cycle of different species, our knowledge of the effect of biotic context(e.g., competitive and mutualistic interactions) is limited.  
+
+The timing of key life history events for interacting species can have profound impacts on the community dynamics (Parmesan 2006). Biotic interactions are assumed to play a role in the origin and maintenance of species diversity (Bascompte 2007). The strength and distribution of different biotic interactions may impact network structures in ecological communities (Gaiarsa & Guimarães 2018). Temporal variation of species interactions creates dynamic processes that in turn, shape community structures (Harley 2003). Unfortunately, the role of biotic interactions and seasonality of life cycles, and vice versa, remains poorly understood (Varpe 2017).  
+
+Reproduction is an energetically costly activity for organisms. During this period in their annual life cycle, they are expected to employ a variety of ecological strategies to achieve reproductive success (Schwartz, 2003). In general, efforts of breeding individuals need to be optimized to ensure that they can exploit resources while avoiding unfavorable conditions (Bradshaw and Holzapfel 2007). Oftentimes, environmental variables that signal abundance of resources (e.g., photoperiod, temperature, precipitation; Denny et al. 2014) are used to cue reproductive timing. However, because of the inherent challenge in collecting data on species in wild populations, a comprehensive understanding of their reproductive phenology is often fragmentary. This is especially true for small mammals that are small-bodied and labor-intensive to monitor (McLean and Guralnick 2020).  
+
+Small mammals provide key ecosystem services as seed dispersers and prey items for larger carnivores (Fischer et al. 2017). Their community structure and dynamics are often linked to habitat features, precipitation, and primary productivity (McLean and Guralnick 2020), which can become increasingly variable in future climate change scenarios (Bellard et al. 2012). Moreover, interspecific competition is often considered an important determinant of habitat use among small mammals (Grant 1978, Maitz and Dickman 2001). As such, determining how the timing of their life history traits relate to abiotic and biotic factors (i.e., competition) can help us better understand the extent of the impacts of climate change on wildlife populations. 
+
+Models that are used to predict biodiversity patterns in future climate change scenarios are often built based on an understanding of the ecological dynamics in a given context. These are then used to predict the state of the system in different climate regimes or landscape layouts (Thuillier et al. 2013). However, these models rarely account for various biotic interactions, such as competition (Araujo and Lauto 2007). For example, the presence or absence of a dominant competitor in a system can reduce the reproductive output of the inferior competitor (e.g., reduced conception rate, higher abortion rate; Eccard and Ylonen 2003), and consequently alter its population structure. This can then have repercussions to the species' response to other environmental variables. Thus, estimating the effects of biotic interactions such as competition can provide us with a more accurate representation of how species should fare in different ecological contexts.
+
+Here, we characterized the context-dependent (i.e., biotic context) breeding phenology of two inferior competitors in the system,Bailey’s pocket mice (*Chaetodipus baileyi*; hereafter referred to as “PB”), and desert pocket mice (*C. penicillatus*; hereafter referred to as "PP), and the presumably dominant competitor, the Merriam's kangaroo rat (*Dipodomys merriami*) that were monitored in a long-term project site near Portal, Arizona since the late 1970s. Specifically, we determined the intensity of the reproductive phenophase (i.e., period in the annual life cycle of species when reproductive characteristics are exhibited; Denny et al. 2014), and assessed the relationship between the proportion of breeding individuals with primary productivity (i.e., normalized difference vegetation index (NDVI) and precipitation) in different biotic conditions (i.e., presence or absence of dominant competitor). We also tested our hypothesis that the role of biotic interactions (i.e., competition) in driving the reproductive activities of small mammals is species-specific. In doing so, we gain a nuanced understanding of the extent and drivers of phenological plasticity in wild populations of small mammals.  
+
+**Methods**  
+
+*Data Curation and Manipulation*  
+
+We assembled a dataset on the observed abundance of individual PBs, PPs and DMs in Portal, Arizona that were exhibiting reproductive characteristics. We used the functionalities of the ‘portalr’ package (Yenni et al. 2019) to obtain partially cleaned individual-level data (i.e., removal of data with bad tags, periods, etc.). From this cleaned dataset, we created subsets for each type of plot (control and kangaroo rat exclosure) and sex (male and female). For our analysis, we assigned individuals as reproductive males for those that had testes described to be scrotal (descended), recently scrotal, or had minor signs of scrotal testes. We identified reproductive females as those that were described to be pregnant (after palpating the belly), with either red and/or enlarged nipples, and those with swollen and/or plugged vaginas. To limit the introduction of biases in our dataset through the inclusion of juveniles, we identified a minimum threshold of the body mass for the breeding individuals for each species and sex (McLean and Guralnick 2020). Then, we filtered out individuals that had a body mass below the threshold for each group. Finally, we calculated the monthly proportion of breeding individuals for each species and sex by dividing the number of reproductive individuals observed by the total number of individuals for each species and sex in each plot type in each year.  
+
+*Data Analysis*    
+
+*Phenology model*- We used a generalized additive modelling (GAM) approach to characterize the breeding phenology of PBs, PPs, and DMs in different biotic contexts. Additive models are useful in describing non-linear relationships between response variables and predictors through the incorporation of smooth functions (Wood 2006). Here, we fitted a model with the form:  
+
+$$ 
+ Y_{ij} \sim Binomial (N_{ij}, p_{ij})           
+ \text       {                                 (Eqn.1)                 } 
+$$  
+
+
+$$
+logistic (P_{ij}) = \frac {exp(\alpha) + f_1 * (month)+f_2 * (NDVI)+f_3 * (precipitation)+ f_4 * (year)}{1 + (exp(\alpha) + f_1 * (month)+ f_2 * (NDVI)+f_3 * (precipitation)+ f_4 * (year))}
+\text       {                                    (Eqn.2)                 }
+$$ 
+
+In Eqn. 1, \(Y_i\) is the proportion of breeding individuals at time point i, which follows a binomial distribution with the parameters N (i.e., total number of males) and p (i.e., proportion of breeding males). \(p_i\) is modelled as a logistic function of \(\alpha\), the population-level intercept, and \(f_1\), the smooth function for the covariate month (Eqn. 2), which was parameterized using cubic cyclic regression splines (Pederson et al. 2019), \(f_2\), the smooth function for the covariate NDVI,\(f_3\), the smooth function for the covariate precipitation, and \(f_4\), the smooth function of the covariate year, parameterized using Gaussian process smooths (Wood 2006). To facilitate interpretation of the results, we standardized all predictors by centering each value on the mean and dividing them by two standard deviations (Gelman 2008). We implemented the model using a restricted maximum likelihood (REML) approach using the ‘mgcv’ package ver 1.8-31 (Wood 2011) in R ver 3.6.2 (R Core Team 2019).
+
+
+**Results**     
+
+*Proportion of breeding individuals*  
+
+From 1995 to 2019, there were 3,529 records of male and 5,269 female PBs in both control and exclosure plots, of which ~11% (392 males and 577 females) exhibited reproductive characteristics (Fig.1). Records of reproductive individuals of both sexes were higher in exclosure plots (64% for males and 74% for females). On average, the proportion of breeding males and females were marginally higher in exclosure plots (13% for males, 12% for females) than in control plots (10% for males, 11% for females).  
+
+Unlike PBs, PPs were recorded on site since the beginning of the study, in 1977. Since then, there were 5,757 records of male PPs and 7,133 records of female PPs in both control and exclosure plots. Moreover, 14% (n=813) and 15% (n=1045) of the males and females, respectively, exhibited reproductive characteristics (Fig.1). Records of reproductive male and female PPs were roughly the same (~50%) in both types of plots (522 females in control and 523 in exclosure, 402 males in control and 411 in exclosure). As in PBs, the average proportion of breeding male and female PPs were marginally higher in exclosure plots (13% for males, 15% for females) than in control plots (12% for males, 14% for females). 
+
+DMs, which are presumably the dominant players in the system, were also recorded since the beginning of the study. There have been 7,527 records of male and 5,870 female DMs since 1977 on site. Moreover, 22% (n=1658) and 17% (n=981) of the males and females, respectively, exhibited reproductive characteristics (Fig.1). As expected, records of reproductive male and female DMs were higher in control plots, where they were not intentionally removed (21% for males and 16% for females). On average, the proportion of breeding male and female DMs in the control plots was at 23% and 18%, respectively.    
+
+```{r include=FALSE}
+####load packages####
+
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(portalr)
+library(ggplot2)
+library(ggpubr)
+####load cleaned individual-level data####
+Portal_data_indiv=summarize_individual_rodents(
+  path = "repo",
+  clean = TRUE,
+  type = "Rodents",
+  length = "all",
+  unknowns = FALSE,
+  time = "date",
+  fillweight = FALSE,
+  min_plots = 1,
+  min_traps = 1,
+  download_if_missing = TRUE,
+  quiet = FALSE
+)%>%filter(!(treatment=="removal"), !is.na(treatment), !is.na(sex))
+
+
+#PB DATASET####
+
+#males####
+
+portal_male=Portal_data_indiv%>%filter(sex=="M") 
+head(portal_male)
+
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+
+PB=repro_male%>%
+  filter(species=="PB", wgt >=16)
+
+#get count of reproductive males per month per year per trt
+pb_dat=PB%>%
+  filter(!(treatment=="spectabs"))%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_PB=portal_male%>%
+  filter(species=="PB",!(treatment=="spectabs"))%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion=right_join(pb_dat, total_PB)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion[is.na(total_proportion)] <- 0 #set non-detects to 0
+
+#females####
+
+portal_female=Portal_data_indiv%>%filter(sex=="F") #49% of individuals are males
+head(portal_male)
+
+repro_female=portal_female%>%
+  filter(vagina==c("S", "P", "B")| pregnant=="P" | nipples==c("R", "E", "B") | lactation=="L")
+
+PBf=repro_female%>%
+  filter(species=="PB", wgt >=21)%>%
+  arrange(wgt)
+
+#get count of reproductive males per month per year per trt
+pbf_dat=PBf%>%
+  filter(!(treatment=="spectabs"))%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_PBf=portal_female%>%
+  filter(species=="PB",!(treatment=="spectabs"))%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_f=right_join(pbf_dat, total_PBf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_f[is.na(total_proportion_f)] <- 0 #set non-detects to 0
+
+PB_all=rbind(total_proportion, total_proportion_f)
+PB_all=as.data.frame(PB_all)%>%
+  mutate(species="PB")
+
+#PP DATASET####
+
+#males####
+
+portal_male=Portal_data_indiv%>%filter(sex=="M") 
+head(portal_male)
+
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+
+PP=repro_male%>%
+  filter(species=="PP", wgt>=10)
+
+#get count of reproductive males per month per year per trt
+PP_dat=PP%>%
+  filter(!(treatment=="spectabs"))%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_PP=portal_male%>%
+  filter(species=="PP",!(treatment=="spectabs"))%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_pp_m=right_join(PP_dat, total_PP)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion_pp_m[is.na(total_proportion_pp_m)] <- 0 #set non-detects to 0
+
+#females####
+
+portal_female=Portal_data_indiv%>%filter(sex=="F") #49% of individuals are males
+head(portal_male)
+
+repro_female=portal_female%>%
+  filter(vagina==c("S", "P", "B")| pregnant=="P" | nipples==c("R", "E", "B") | lactation=="L")
+
+PPf=repro_female%>%
+  filter(species=="PP", wgt >=11)
+
+#get count of reproductive males per month per year per trt
+PPf_dat=PPf%>%
+  filter(!(treatment=="spectabs"))%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_PPf=portal_female%>%
+  filter(species=="PP",!(treatment=="spectabs"))%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_pp_f=right_join(PPf_dat, total_PPf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_pp_f[is.na(total_proportion_pp_f)] <- 0 #set non-detects to 0
+
+PP_all=rbind(total_proportion_pp_m, total_proportion_pp_f)
+PP_all=as.data.frame(PP_all)%>%
+  mutate(species="PP")
+
+#DM DATASET####
+
+#males####
+
+portal_male=Portal_data_indiv%>%filter(sex=="M") 
+head(portal_male)
+
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+
+DM=repro_male%>%
+  filter(species=="DM", wgt>=22)
+
+#get count of reproductive males per month per year per trt
+DM_dat=DM%>%
+  filter(!(treatment=="spectabs"))%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_DM=portal_male%>%
+  filter(species=="DM",!(treatment=="spectabs"))%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_dm_m=right_join(DM_dat, total_DM)%>%
+  mutate(proportion=reproductive/abundance, sex="male")%>%
+  arrange(proportion)
+
+total_proportion_dm_m[is.na(total_proportion_dm_m)] <- 0 #set non-detects to 0
+
+#females####
+
+portal_female=Portal_data_indiv%>%filter(sex=="F") #49% of individuals are males
+head(portal_male)
+
+repro_female=portal_female%>%
+  filter(vagina==c("S", "P", "B")| pregnant=="P" | nipples==c("R", "E", "B") | lactation=="L")
+
+DMf=repro_female%>%
+  filter(species=="DM", wgt>=25)
+
+#get count of reproductive males per month per year per trt
+DMf_dat=DMf%>%
+  filter(!(treatment=="spectabs"))%>%
+  group_by(month, year, treatment)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for each species per month per year per trt
+total_DMf=portal_female%>%
+  filter(species=="DM",!(treatment=="spectabs"))%>%
+  group_by(month,year, treatment)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male was recorded
+total_proportion_dm_f=right_join(DMf_dat, total_DMf)%>%
+  mutate(proportion=reproductive/abundance, sex="female")%>%
+  arrange(proportion)
+
+total_proportion_dm_f[is.na(total_proportion_dm_f)] <- 0 #set non-detects to 0
+DM_all=rbind(total_proportion_dm_m, total_proportion_dm_f)
+DM_all=as.data.frame(DM_all)%>%
+  mutate(species="DM")
+
+#combine PB, PP and DM datasets####
+all_sp=rbind(PB_all, PP_all, DM_all)
+
+#add ndvi and ppt monthly data####
+
+prod=ndvi(level="monthly")
+
+prod2=prod%>%
+  mutate(year=year(date), month=month(date))
+ppt=weather(level="monthly")%>%select(year,month,precipitation)
+
+all_prod=right_join(prod2,all_sp)
+all_prod_ppt=right_join(ppt, all_prod)
+#write.csv(all_prod_ppt, "all_full_prod.csv")
+
+pb_plot=all_prod_ppt%>%filter(species=="PB")
+pp_plot=all_prod_ppt%>%filter(species=="PP")
+dm_plot=all_prod_ppt%>%filter(species=="DM")
+```
+
+```{r include=FALSE}
+pbmc=pb_plot%>%filter(sex=="female", treatment=="exclosure")
+sum(pbmc$abundance)
+sum(pbmc$reproductive)
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+tab1=read.csv("./ReproData/tab1.csv")
+
+tab1%>%ggplot(aes(x = species, y = percentage, colour = treatment)) +
+  geom_boxplot(notch = TRUE) +
+  facet_wrap(~sex) +
+  labs(x = 'species', y = 'proportion (%)') +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+```   
+
+**Fig.1** Breeding intensity of male and female Merriam's kangaroo rat(DO), Bailey's pocket mouse (PB), and desert pocket mouse (PP) in control and exclosure plots.
+
+*Reproductive phenophases of representative species*  
+(first derivatives for the seasonal effects)
+
+```{r warning=FALSE, message= FALSE, echo=FALSE}
+tmpf <- tempfile()
+download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",tmpf)
+source(tmpf)
+
+want=seq(1, nrow(PB_male_ex), length.out = 200)
+pdat2=with(PB_male_con, data.frame(year=year[want], month=month[want], ndvi=ndvi[want], precipitation=precipitation[want]))
+p3=predict(m4, newdata=pdat2, type="terms", se.fit = TRUE)
+pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
+
+df.res=df.residual(m4)
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
+
+Term <- "month"
+m4.d <- Deriv(m4)
+m4.dci <- confint(m4.d, term = Term)
+m4.dsig <- signifD(pdat2$p3, d = m4.d[[Term]]$deriv,
+                     +m4.dci[[Term]]$upper, m4.dci[[Term]]$lower)
+
+plot.Deriv(m4.d, sizer =T)
+mean(m4.dsig$decr, na.rm=T)
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+
+#visualization####
+ggplot(pb_plot, aes(y=proportion, x=month, col=treatment)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("Bailey's pocket mouse")+
+  facet_wrap(~sex)+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(pp_plot, aes(y=proportion, x=month, col=treatment)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("desert pocket mouse")+
+  facet_wrap(~sex)+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(dm_plot, aes(y=proportion, x=month, col=treatment)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("Merriam's kangaroo rat")+
+  facet_wrap(~sex)+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+```  
+
+**Fig.2.** Reproductive phenophase of female (top left panel) and male (top right panel) Bailey's pocket mouse (*C. baileyi*), male (mid left panel) and female (mid right panel) desert pocket mouse (*C. penicillatus*), and male (bottom left panel) and female (bootm right panel) Merriam's kangaroo rat (*D. merriami*) in control and exclosure plots from 1977 to 2019.  
+
+*Context-dependent relationships between abiotic variables and proportion of breeding individuals*  
+
+*Bailey's pocket mouse*- We found a significant non-linear relationship in the smooth terms for the seasonal trends (i.e., month) of male PBs in control plots (edf=4.26, *p*<0.05; Fig.4). Long-term trends (i.e., year) and NDVI showed non-linear relationships with the proportion of breeding males but were not significant (year:edf=2.03,*p*=0.07; NDVI: edf=2.96, *p*=0.08). The proportion of breeding male PBs in control plots exhibited a linear relationship with precipitation (edf=1, *p*=0.01). Moreover, the proportion of breeding male PBs in exclosure plots exhibited significant non-linear relationships with the smooth terms for the seasonal trends (edf=3.95, *p*<0.05; Fig. 5), long-term trends (edf=4.17, *p*<0.05), and precipitation (edf=3.16, *p*=0.02). NDVI exhibited non-linear and non-significant relationships with the proportion of breeding male PBs in the exclosures (edf=1.3, *p*=0.83).  
+
+The proportion of breeding female PBs in control plots exhibited significant non-linear seasonal (edf=4.13, *p*<0.05) and long-term trends (edf=4.89, *p*<0.05; Fig.6). NDVI and precipitation showed non-significant linear relationships with the response variable (edf=1.00, *p*=0.15). On the other hand, the proportion of breeding male PBs showed significant non-linear seasonal (edf=6.78, *p*<0.05) and long-term trends (edf=7.13, *p*<0.05; Fig.7). NDVI (edf=5.07, *p*<0.05) and precipitation (edf=6.98, *p*<0.05) also exhibited significant non-linear relationships with the proportion of breeding females. 
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+PB_male_con=pb_plot%>%filter(treatment=="control", sex=="male")
+PB_male_ex=pb_plot%>%filter(treatment=="exclosure", sex=="male")
+PB_female_con=pb_plot%>%filter(treatment=="control", sex=="female")
+PB_female_ex=pb_plot%>%filter(treatment=="exclosure", sex=="female")
+
+m1_bin=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PB_male_con, method = 'REML', weights = abundance, family = binomial)
+m1_norm=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PB_male_con, method = 'REML')
+m2=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PB_male_ex, method = 'REML', weights = abundance, family = binomial)
+m3=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PB_female_con, method = 'REML', weights = abundance, family = binomial)
+m4=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PB_female_ex, method = 'REML', weights = abundance, family = binomial)
+
+summary(m1_bin)
+summary(m1_norm)
+summary(m2)
+summary(m3)
+summary(m4)
+```  
+
+```{r echo=FALSE}
+plot(m1_bin, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.4.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male Bailey's pocket mouse (*C. baileyi*) in control plots, from 1996 to 2019.    
+
+```{r echo=FALSE}
+plot(m2, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.5.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male Bailey's pocket mouse (*C. baileyi*) in exclosure plots, from 1996 to 2019. 
+
+```{r echo=FALSE}
+plot(m3, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.6.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive female Bailey's pocket mouse (*C. baileyi*) in control plots, from 1996 to 2019.  
+
+```{r echo=FALSE}
+plot(m4, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.7.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive female Bailey's pocket mouse (*C. baileyi*) in exclosure plots, from 1996 to 2019.  
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+PP_male_con=pp_plot%>%filter(treatment=="control", sex=="male")
+PP_male_ex=pp_plot%>%filter(treatment=="exclosure", sex=="male")
+PP_female_con=pp_plot%>%filter(treatment=="control", sex=="female")
+PP_female_ex=pp_plot%>%filter(treatment=="exclosure", sex=="female")
+
+m5=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PP_male_con, method = 'REML', weights = abundance, family = binomial)
+m6=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PP_male_ex, method = 'REML', weights = abundance, family = binomial)
+m7=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PP_female_con, method = 'REML', weights = abundance, family = binomial)
+m8=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=PP_female_ex, method = 'REML', weights = abundance, family = binomial)
+
+summary(m5)
+summary(m6)
+summary(m7)
+summary(m8)
+```    
+*Desert pocket mouse*- The proportion of male PPs in control plots exhibited significant non-linear seasonal trends (edf=5.91, *p*<0.05) and linear relationship with NDVI (edf=1.00, *p*<0.05; Fig. 8). Long-term trends (edf=1.63, *p*=0.67) and relationship with precipitation (edf=1.37, *p*=0.25) were non-linear and non-significant. Similarly, the smooth term for the seasonal trends in the proportion of breeding male PPs in exclosure plots were non-linear and significant (edf=4.87, *p*<0.05; Fig.9). There was also a significant linear relationship between the proportion of breeding male PPs and year (edf=1.00, *p*=0.01). Additionally, NDVI exhibited significant non-linear relationship with the response variable (edf=5.02, *p*<0.05). Finally, precipitation exhibited non-significant non-linear relationship with the proportion of breeding male PPs in exclosures (edf=1.98, *p*=0.41).  
+
+The proportion of female PPs in control plots exhibited significant non-linear seasonal (edf=4.97, *p*<0.05) and long-term trends (edf=2.85, *p*<0.05; Fig.10). The response variable also ehibited significant non-linear relationships with NDVI (edf=7.14, *p*<0.05) and precipitation (edf=5.54, *p*=0.01). Similarly, the seasonal (edf=5.26, *p*<0.05) and long-term trends (edf=2.53, *p*<0.05) of the proportion of breeding female PPs in exclosure plots were significantly non-linear (Fig.11). NDVI also exhibited significant non-linear relationship with the response variable (edf=6.13, *p*<0.05). Finally, precipitation exhibited non-significant linear relationship with the proportion of breeding female PPs in exclosures (edf=1.00, *p*=0.36).  
+
+```{r echo=FALSE}
+plot(m8, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.8.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male desert pocket mouse (*C. penicillatus*) in control plots, from 1977 to 2019.   
+
+```{r echo=FALSE}
+plot(m6, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.9.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male desert pocket mouse (*C. penicillatus*) in exclosure plots, from 1977 to 2019. 
+
+```{r echo=FALSE}
+plot(m7, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.10.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive female desert pocket mouse (*C. penicillatus*) in control plots, from 1977 to 2019.  
+
+```{r echo=FALSE}
+plot(m8, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.11.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive female desert pocket mouse (*C. penicillatus*) in exclosure plots, from 1977 to 2019.
+```{r warning=FALSE, message=FALSE, echo=FALSE, include=FALSE}
+DM_male_con=dm_plot%>%filter(treatment=="control", sex=="male")
+DM_female_con=dm_plot%>%filter(treatment=="control", sex=="female")
+DM_male_ex=dm_plot%>%filter(treatment=="exclosure", sex=="male")
+DM_female_ex=dm_plot%>%filter(treatment=="exclosure", sex=="female")
+
+m9=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_male_con, method = 'REML', weights = abundance, family = binomial)
+m10=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_female_con, method = 'REML', weights = abundance, family = binomial)
+m11=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_male_ex, method = 'REML', weights = abundance, family = binomial)
+m12=mgcv::gam(proportion~s(month, bs="cc", k=12)+s(year)+s(ndvi)+s(precipitation), data=DM_female_ex, method = 'REML', weights = abundance, family = binomial)
+summary(m9)
+summary(m10)
+```    
+*Merriam's kangaroo rat*- The proportion of breeding male DMs in control plots exhibited significant non-linear seasonal trends(edf=4.89, *p*<0.05) and non-significant non-linear long-term trends (edf=1.54, *p*=0.53). Moreover, the response variable exhibited non-significant linear relationship with NDVI (edf=1.00, *p*=0.06) and and non-linear relationship with precipitation (edf=1.14, *p*=0.22). Similarly, the proportion of breeding female DMs exhibited significant non-linear seasonal (edf=5.28, *p*<0.05) and long-term trends (edf=7.96, *p*<0.05). Moreover, the response variable exhibited a significant non-linear relationship with NDVI (edf=2.44, *p*<0.05) and non-significant non-linear relationship with precipitation (edf=2.51, *p*=0.53).
+
+```{r echo=FALSE}
+plot(m9, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.12.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive male Merriam's kangaroo rat (*Dipodomys merriami*) in control plots, from 1977 to 2019.  
+
+```{r echo=FALSE}
+plot(m12, pages=1, all.terms=TRUE, residuals=TRUE, shade=TRUE)
+```
+
+**Fig.13.** Generalized additive model (GAM) plots showing the partial effects of a) seasonal trends, b) long-term trends, c) primary productivity (NDVI), and d) precipitation on the proportion of reproductive female Merriam's kangaroo rat (*Dipodomys merriami*) in control plots, from 1977 to 2019.
+
+
+**Discussion**  
+
+Species interactions such as interspecific competition can modify resource availability and response to local abiotic conditions (Lortie et al. 2004) but are rarely explicitly accounted for in population models due to limitations in data availability (Thuillier et al. 2013). Field experiments that intentionally remove certain species allow us to determine the effect of biotic interactions on the dynamics of other coexisting species.Using a long-term dataset on the abundance of rodent populations subjected to species removal experiments, we XXXXX
+
+

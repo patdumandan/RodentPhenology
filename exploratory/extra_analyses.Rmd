@@ -1,0 +1,372 @@
+---
+title: "Extra Analyses on Rodent Reproduction Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(portalr)
+library(ggplot2)
+library(lubridate)
+library(reshape2)
+library(mgcv)
+library(cowplot)
+library(dotwhisker)
+
+```
+
+```{r include=F}
+all_dat=read.csv("https://raw.githubusercontent.com/patdumandan/ReproPhenology/main/ReproData/reproductive_full_data.csv")
+
+```
+
+I. K-rat reproductive phenology and drivers  
+
+A. Phenology of male and female DM, DO, DS in control plots  
+
+```{r echo=F}
+DM_all=all_dat%>%filter(species=="DM")
+DO_all=all_dat%>%filter(species=="DO")
+DS_all=all_dat%>%filter(species=="DS")
+Dipos_all=all_dat%>%filter(species%in%c("DM", "DO", "DS"))
+```
+
+```{r echo=F, message=F}
+ggplot(DM_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("DM")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(DO_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("DO")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(DS_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("DS")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(Dipos_all, aes(y=proportion, x=month, col=sex)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("All Dipos (DM, DO, DS)")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```  
+**Notes**  
+* DM females have a prolonged "peak reproductive season (April-Sept) while males, in general are reproductive year-round (except in Jun and Jul when there are actual Os).  
+* DO females have some sort of peak reproductive period from Apr-Jun, while males don't. Also, DO males have a much higer mean proportion of reproductive individuals (no Os at all!)  
+* DS just has too few data (which is why I decided to pool all dipos and plot their phenology)  
+* Across all Dipo species, females have a peak reproductive period around April to May while males seem to exhibit double peaks (one around Jan to Mar and the next around Aug-Sept) Not entirely sure what's driving the 2nd peak for males since no species seems to exhibit a peak around the months of Aug and Sept  
+* First peak for male Dipos is before the "peak" period for females   
+
+II. Drivers of Reproductive Phenology of Dipos  
+
+Given that there are too few DS data and only a few of DOs in control, I decided to fit models with data for all Dipo species pooled together to determine what drives their reproductive phenology  
+
+A. Abiotic only  
+```{r echo=F, message=F, warning=F}
+dipos_female=Dipos_all%>%filter(sex=="female")  
+dipos_male=Dipos_all%>%filter(sex=="male")  
+
+
+dipo_f1=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool, data=dipos_female, method = 'REML', weights = abundance, family = binomial)
+
+dipo_m1=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool, data=dipos_male, method = 'REML', weights = abundance, family = binomial)
+```   
+
+```{r echo=F, fig.show="hold", fig.cap="Fig. 1. Association between abiotic factors and the P(breeding) of Dipo males (R2=0.08, dev.explained=9.57%) and females (R2=0.29, dev.explained=30.7%) in control plots"}
+dwplot(list(dipo_f1, dipo_m1))+
+  scale_color_grey(start = .3,end = .7,name = "sex",
+    labels = c("female","male"))+ggtitle("Dipodomys sp. (abiotic only)")+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")
+```
+B. Abiotic + Intraspecific competition  
+
+```{r warning=F, message=F, echo=F}  
+
+dipo_f2=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool+ dipos, data=dipos_female, method = 'REML', weights = abundance, family = binomial)
+
+dipo_m2=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool+ dipos, data=dipos_male, method = 'REML', weights = abundance, family = binomial)
+```   
+
+```{r echo=F, fig.show="hold", fig.cap="Fig. 2. Association between abiotic factors and intraspecific competition and the P(breeding) of Dipo males (R2=0.08, dev.explained=9.76%) and females (R2=0.28, dev.explained=30.7%) in control plots"}
+dwplot(list(dipo_f2, dipo_m2))+
+  scale_color_grey(start = .3,end = .7,name = "sex",
+    labels = c("female","male"))+ggtitle("Dipodomys sp. (abiotic + intraspecific competition)")+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")
+```  
+
+C. Abiotic + Intra- and Interspecific Competition (PBs and PPs)  
+
+```{r warning=F, message=F, echo=F}  
+dipo_f3=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool+ pbs+pps+dipos, data=dipos_female, method = 'REML', weights = abundance, family = binomial)
+
+dipo_m3=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool+ pbs+pps+dipos, data=dipos_male, method = 'REML', weights = abundance, family = binomial)
+```  
+
+```{r echo=F, fig.show="hold",fig.cap="Fig. 3. Association between abiotic factors, intra- and interspecific competition and the P(breeding) of Dipo males (R2=0.08, dev.explained=10.2%) and females (R2=0.29, dev.explained=31.4%) in control plots"}
+dwplot(list(dipo_f3, dipo_m3))+
+  scale_color_grey(start = .3,end = .7,name = "sex",
+    labels = c("male","female"))+ggtitle("Dipodomys sp. (abiotic+intra+intersp. competition)")+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")
+```  
+
+**Notes**  
+* only female Dipos showed significant responses to competition (all types) and cool precip (at both lags; what does this response to cool precip mean?)  
+
+II. Phenology and drivers of male PPs and PBs in Portal, AZ    
+* combined data for PP males in both control and exclosure to check whether pooling data across all treatment plots would show any significant association between PP males and any factors  
+*combined data for PB males in both treatment plots to see if doing so would show a trend/peak periods because right now, it seems like PB males don't have a peak period in both control and exclosures  
+
+A. Phenology  
+
+```{r include=F}
+Portal_clean=read.csv("https://raw.githubusercontent.com/patdumandan/ReproPhenology/main/ReproData/Portal_reproductive_indiv.csv")
+
+portal_male=Portal_clean%>%filter(sex=="M", !is.na(sex), !is.na(treatment)) 
+
+repro_male=portal_male%>%
+  filter(testes==c("S", "M", "R"))
+
+PP_combined=repro_male%>%
+  filter(species=="PP", wgt >=13)
+
+#get count of reproductive males per month per year per trt
+PP_dat=PP_combined%>%
+  group_by(month, year)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_PP=portal_male%>%
+  filter(species=="PP")%>%
+  group_by(month,year)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male were recorded
+total_proportion_pp_all_m=right_join(PP_dat, total_PP)%>%
+  mutate(proportion=reproductive/abundance, sex="male")
+
+total_proportion_pp_all_m[is.na(total_proportion_pp_all_m)] <- 0 #set non-detects to 0
+```
+
+```{r echo=F, message=F, warning=F, fig.cap= "Fig.4. Phenology of PP males in Portal, AZ."}
+ggplot(total_proportion_pp_all_m, aes(y=proportion, x=month)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PP males")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```  
+```{r include=F}
+PB_combined=repro_male%>%
+  filter(species=="PB", wgt >=18)
+
+#get count of reproductive males per month per year per trt
+PB_dat=PB_combined%>%
+  group_by(month, year)%>%
+  summarise(reproductive=n())
+
+#get total observed abundance for MALES per month per year per trt
+total_PB=portal_male%>%
+  filter(species=="PB")%>%
+  group_by(month,year)%>%
+  summarise(abundance=n())
+
+#calculate proportion
+#this creates NAs for months when no reproductive male were recorded
+total_proportion_pb_all_m=right_join(PB_dat, total_PB)%>%
+  mutate(proportion=reproductive/abundance, sex="male")
+
+total_proportion_pb_all_m[is.na(total_proportion_pb_all_m)] <- 0 #set non-detects to 0
+```   
+
+```{r warning=F, message=F, echo=F, fig.cap="Fig.5. Phenology of PB males in Portal, AZ."}
+ggplot(total_proportion_pb_all_m, aes(y=proportion, x=month)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PB males")+ 
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```  
+
+**Notes**  
+* peak period seems to be Mar-May for PP males, and similarly, low reproductive activity towards winter (Oct-Dec)  
+* still no peak period for PB males  
+
+B. Drivers  
+
+```{r include=F}
+prod=ndvi(level="monthly", sensor="landsat", fill=TRUE)
+
+prod2=prod%>%
+  mutate(year=year(date), month=month(date))
+
+#add lag to ndvi####
+ndvi_lag=prod2%>%
+  mutate(lag_ndvi=lag(ndvi,order_by=date))%>%
+  filter(!(year<1988))
+
+temp=weather(level="monthly", fill=TRUE, horizon=90)%>%
+  select(year,month,meantemp, mintemp, maxtemp, precipitation, warm_precip, cool_precip)
+  
+temp$date=as.Date(paste(temp$year, temp$month, 01), "%Y %m %d")
+
+#add lag to temp####
+temp_lag=temp%>%
+  mutate(lag_temp_mean=lag(meantemp,order_by=date),
+         lag_temp_min=lag(mintemp,order_by=date),
+         lag_temp_max=lag(maxtemp,order_by=date),
+         lag_ppt=lag(precipitation,order_by=date),
+         lag_ppt_warm_2=lag(warm_precip,n=2,order_by=date),
+         lag_ppt_cool_2=lag(cool_precip,n=2,order_by=date),
+         lag_ppt_warm=lag(warm_precip,order_by=date),
+         lag_ppt_cool=lag(cool_precip,order_by=date))%>%
+  filter(!(year<1988))
+
+PPm_prod=right_join(ndvi_lag,total_proportion_pp_all_m)
+PPm_prod_temp=right_join(temp_lag, PPm_prod)
+
+bmass=biomass(level="Plot", type="Rodents",
+              clean=TRUE, plots="all", time="date", shape="crosstab")%>%
+  mutate(month=month(censusdate), date=day(censusdate), year=year(censusdate))%>%
+  filter(!(year<1988), !(year>2014), !(treatment %in%c("spectabs", "removal")))
+
+DO_bmass=bmass%>%select(DO, plot,month, year, date)%>%
+  group_by(month, year)%>%
+  summarise(bmass_DO=sum(DO))
+
+DS_bmass=bmass%>%select(DS, plot, month, year, date)%>%
+  group_by(month, year)%>%
+  summarise(bmass_DS=sum(DS))
+
+DM_bmass=bmass%>%select(DM, plot, month, year, date)%>%
+  group_by(month, year)%>%
+  summarise(bmass_DM=sum(DM))
+
+PP_bmass=bmass%>%select(PP, plot, month, year, date)%>%
+  group_by(month, year)%>%
+  summarise(bmass_PP=sum(PP))
+
+PB_bmass=bmass%>%select(PB, plot,month, year, date)%>%
+  group_by(month, year)%>%
+  summarise(bmass_PB=sum(PB))
+
+all_bmass11=left_join(PPm_prod_temp,DM_bmass, by=c("month", "year"))
+all_bmass12=left_join(all_bmass11,DO_bmass, by=c("month", "year"))
+all_bmass13=left_join(all_bmass12,DS_bmass, by=c("month", "year"))
+all_bmass2=left_join(all_bmass13,PB_bmass, by=c("month", "year"))
+all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year"))%>%
+  mutate(DIPO_bmass=rowSums(.[26:28]))%>%drop_na()
+
+all_bmass3$years=(all_bmass3$year-mean(all_bmass3$year))/(2*sd(all_bmass3$year))
+all_bmass3$ndvis=(all_bmass3$ndvi-mean(all_bmass3$ndvi))/(sd(all_bmass3$ndvi))
+all_bmass3$ndvis_lag=(all_bmass3$lag_ndvi-mean(all_bmass3$lag_ndvi))/(sd(all_bmass3$lag_ndvi))
+all_bmass3$temps_lag_mean=(all_bmass3$lag_temp_mean-mean(all_bmass3$lag_temp_mean))/(2*sd(all_bmass3$lag_temp_mean))
+all_bmass3$temps_lag_min=(all_bmass3$lag_temp_min-mean(all_bmass3$lag_temp_min))/(2*sd(all_bmass3$lag_temp_min))
+all_bmass3$temps_lag_max=(all_bmass3$lag_temp_max-mean(all_bmass3$lag_temp_max))/(2*sd(all_bmass3$lag_temp_max))
+all_bmass3$temps_mean=(all_bmass3$meantemp-mean(all_bmass3$meantemp))/(2*sd(all_bmass3$meantemp))
+all_bmass3$temps_min=(all_bmass3$mintemp-mean(all_bmass3$mintemp))/(2*sd(all_bmass3$mintemp))
+all_bmass3$temps_max=(all_bmass3$maxtemp-mean(all_bmass3$maxtemp))/(2*sd(all_bmass3$maxtemp))
+all_bmass3$ppts=(all_bmass3$precipitation-mean(all_bmass3$precipitation))/(2*sd(all_bmass3$precipitation))
+all_bmass3$ppts_lag=(all_bmass3$lag_ppt-mean(all_bmass3$lag_ppt))/(2*sd(all_bmass3$lag_ppt))
+all_bmass3$dipos=(all_bmass3$DIPO_bmass-mean(all_bmass3$DIPO_bmass))/(2*sd(all_bmass3$DIPO_bmass))
+all_bmass3$pbs=(all_bmass3$bmass_PB-mean(all_bmass3$bmass_PB))/(2*sd(all_bmass3$bmass_PB))
+all_bmass3$pps=(all_bmass3$bmass_PP-mean(all_bmass3$bmass_PP))/(2*sd(all_bmass3$bmass_PP))
+all_bmass3$ppts_warm=(all_bmass3$warm_precip-mean(all_bmass3$warm_precip))/(2*sd(all_bmass3$warm_precip))
+all_bmass3$ppts_cool=(all_bmass3$cool_precip-mean(all_bmass3$cool_precip))/(2*sd(all_bmass3$cool_precip))
+all_bmass3$ppts_lag_warm=(all_bmass3$lag_ppt_warm-mean(all_bmass3$lag_ppt_warm))/(2*sd(all_bmass3$lag_ppt_warm))
+all_bmass3$ppts_lag_cool=(all_bmass3$lag_ppt_cool-mean(all_bmass3$lag_ppt_cool))/(2*sd(all_bmass3$lag_ppt_cool))
+all_bmass3$ppts_lag_warm_2=(all_bmass3$lag_ppt_warm_2-mean(all_bmass3$lag_ppt_warm_2))/(2*sd(all_bmass3$lag_ppt_warm_2))
+all_bmass3$ppts_lag_cool_2=(all_bmass3$lag_ppt_cool_2-mean(all_bmass3$lag_ppt_cool_2))/(2*sd(all_bmass3$lag_ppt_cool_2))
+
+```  
+
+
+```{r echo=F, warning=F}
+
+ppm_all1=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool, data=all_bmass3, method = 'REML', weights = abundance, family = binomial)
+
+ppm_all2=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool+ pps, data=all_bmass3, method = 'REML', weights = abundance, family = binomial)
+
+ppm_all3=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_mean+temps_lag_mean+ppts_warm+ppts_lag_warm+ppts_cool+ppts_lag_cool+ pps+pbs+dipos, data=all_bmass3, method = 'REML', weights = abundance, family = binomial)
+
+```  
+
+```{r echo=F, warning=F, message=F, fig.cap="Fig.6. Drivers of reproductive phenology of PP males in Portal, AZ."}
+dwplot(list(ppm_all1, ppm_all2, ppm_all3))+
+  scale_color_grey(start = .03,end = .7,
+    labels = c("abiotic+intra+inter","abiotic+intra","abiotic"))+ggtitle("PP males (control+exclosure)")+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")
+```  
+
+**Notes**  
+* By pooling all data in both control and exclosure, we see that PP males respond to temperature (lag 1), warm precip (lag 1, which is the same as our initial results in exclosures), cool precip (lag 0 for models w/o competition), and all types of competition (pps,pbs, dipos)  
+* model performance: 1) abiotic only model (R2=0.60, deviance explained=64.2%), 2) abiotic+ intra (R2=0.59, deviance explained=64.6%), 3) abiotic +intra+inter (R2=0.67, deviance explained=69.9%))  
+* model performance when control and exclosure data are combined is slightly better than when separated (in control, R2=0.68, deviance explained=63.6%); in exclosure, R2=0.48, devianc explained=52.1%)  
+
+**To discuss with Glenda/Morgan**  
+
+* would it be a good idea to create an "overall" phenology (i.e., pool all data for control and exclosure) for males and females for each species but not really add it in the main manuscript? just to give the reviewers/readers an idea of what the reproductive phenologies(?) of the different species are and what drives them on site (regardless of biotic condition)?  
+* Apart from the timing of Dipo reproduction, I'm not really sure what to do with this information about the drivers of Dipo.reproduction. I feel like it's also cool as it shows the importance of precip. But I'm not too sure if it would fit well with the current focus of the project.  
+
+Periods of Significant increase/decrease in DMs:
+
+```{r}
+want=seq(1, nrow(dipos_male), length.out = 200)
+pdat=with(dipos_male, data.frame(year=year[want], month=month[want], 
+                                    ndvis=ndvis[want],ndvis_lag=ndvis_lag[want],
+                                    ppts_warm=ppts_warm[want], ppts_lag_warm=ppts_lag_warm[want],
+                                    ppts_cool=ppts_cool[want], ppts_lag_cool=ppts_lag_cool[want],
+                                    temps_mean=temps_mean[want], temps_lag_mean=temps_lag_mean[want],
+                                    pps=pps[want], pbs=pbs[want], dipos=dipos[want]))
+p3=predict(dipo_m3, newdata=pdat, type="terms", se.fit = TRUE)
+pdat=transform(pdat, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
+
+df.res=df.residual(dipo_m3)
+
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat=transform(pdat, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
+
+m1.d <- Deriv(dipo_m3)
+Term="month"
+m1.dci <- confint(m1.d, term = Term)
+m1.dsig <- signifD(pdat$p3, d = m1.d[[Term]]$deriv,
+                   +m1.dci[[Term]]$upper, m1.dci[[Term]]$lower)
+plot.Deriv(m1.d, sizer=T, term=Term, xaxt="n")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+```

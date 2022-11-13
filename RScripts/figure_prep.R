@@ -51,8 +51,7 @@ dipom_con3=mgcv::gam(proportion~s(month,bs="cc")+s(year)+ndvis+ndvis_lag+temps_m
 #DIPO female control####
 plot.gam(dipof_con3, select=1, xaxt="n", ylab="Effect")
 title("female")
-mtext("kangaroo rat", at=1, font=2)
-mtext("A", at=12, col="black", font=2)
+text(x=11, y=1, "(a)", col="black", font=2)
 axis(1, at=1:12, labels=F)
 rect(xleft=11.5, ybottom=-5, ytop=5, xright=12, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=1, ybottom=-5, ytop=5, xright=3, col = rgb(0,0,0.5, 1/4)) #control
@@ -63,77 +62,57 @@ plot(dipo_m$proportion~dipo_m$month, xaxt="n", pch=20, ylab="proportion of breed
 title("male")
 #plot.gam(dipom_con3, select=1, xaxt="n", ylab="Effect", main="male")
 axis(1, at=1:12, labels=F)
-mtext("B", at=12, col="black", font=2)
+text(x=11, y=0.9, "(b)", col="black", font=2)
 
 #PB female control####
 
 plot.gam(pbf_con3, select=1, xaxt="n", ylab="Effect")
 mtext("Bailey's pocket mouse (control)", at=3, font=2)
-mtext("C", at=12, col="black", font=2)
+text(x=11, y=3.1, "(c)", col="black", font=2)
 axis(1, at=1:12, labels=F)
 rect(xleft=1, ybottom=-5, ytop=5, xright=3, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=6, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
 
 #PB male control####
 plot(PB_male_con$proportion~PB_male_con$month, xaxt="n", pch=20, ylab="proportion of breeders", xlab="month")
-mtext("D", at=12, col="black", font=2)
+text(x=11, y=0.9, "(d)", col="black", font=2)
 axis(1, at=1:12, labels=F)
 
 #PB female exclosure####
 plot.gam(pbf_ex3, select=1, xaxt="n", ylab="Effect")
 mtext("Bailey's pocket mouse (exclosure)", at=3, font=2)
-mtext("E", at=12, col="black", font=2)
+text(x=11, y=2.7, "(e)", col="black", font=2)
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 rect(xleft=2, ybottom=-5, ytop=5, xright=4, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=6, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
 
 #PB male exclosure####
 plot.gam(pbm_ex3, select=1, xaxt="n", ylab="Effect")
-mtext("F", at=12, col="black", font=2)
+text(x=11, y=1.3, "(f)", col="black", font=2)
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 rect(xleft=1, ybottom=-5, ytop=5, xright=3, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=7, ybottom=-5, ytop=5, xright=7.5, col = rgb(0.5,0,0, 1/4))#control decr
 
 #FIGURE 2####
-#DIPO female control####
-plot.gam(dipof_con3, select=1, xaxt="n", ylab="Effect")
-title("female")
-mtext("kangaroo rat", at=1, font=2)
-mtext("A", at=12, col="red", font=2)
-axis(1, at=1:12, labels=F)
-rect(xleft=11.5, ybottom=-5, ytop=5, xright=12, col = rgb(0,0,0.5, 1/4)) #control
-rect(xleft=1, ybottom=-5, ytop=5, xright=3, col = rgb(0,0,0.5, 1/4)) #control
-rect(xleft=6, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
-
-#DIPO male control####
-plot(dipo_m$proportion~dipo_m$month, xaxt="n", pch=20, ylab="proportion of breeders", xlab="month")
-title("male")
-#plot.gam(dipom_con3, select=1, xaxt="n", ylab="Effect", main="male")
-axis(1, at=1:12, labels=F)
-mtext("B", at=12, col="red", font=2)
 
 #PP female control####
 
 plot.gam(ppf_con3, select=1, xaxt="n", ylab="Effect")
-mtext("desert pocket mouse (control)", at=3, font=2)
-mtext("C", at=12, col="black", font=2)
-axis(1, at=1:12, labels=F)
+text(x=11, y=4, "(c)", col="black", font=2)
 rect(xleft=11, ybottom=-5, ytop=10, xright=12, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=1, ybottom=-5, ytop=10, xright=1.5, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=5, ybottom=-5, ytop=10, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
 
 #PP male control####
 plot.gam(ppm_con3, select=1, xaxt="n", ylab="Effect")
-mtext("D", at=12, col="black", font=2)
-axis(1, at=1:12, labels=F)
+text(x=11, y=2.4, "(d)", col="black", font=2)
 rect(xleft=1, ybottom=-5, ytop=10, xright=4, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=6, ybottom=-5, ytop=10, xright=9, col = rgb(0.5,0,0, 1/4))#control decr
 
 #PP female exclosure####
 
 plot.gam(ppf_ex3, select=1, xaxt="n", ylab="Effect")
-mtext("desert pocket mouse (exclosure)", at=3, font=2)
-mtext("E", at=12, col="black", font=2)
+text(x=11, y=3.4, "(e)", col="black", font=2)
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 rect(xleft=10, ybottom=-5, ytop=5, xright=12, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=5, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
@@ -141,7 +120,7 @@ rect(xleft=5, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control dec
 
 #PP male exclosure####
 plot.gam(ppm_ex3, select=1, xaxt="n", ylab="Effect")
-mtext("F", at=12, col="black", font=2)
+text(x=11, y=1.4, "(f)", col="black", font=2)
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 rect(xleft=1, ybottom=-5, ytop=5, xright=2, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=7, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr

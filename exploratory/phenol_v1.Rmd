@@ -1,0 +1,206 @@
+---
+title: "The context-dependent breeding phenology of a desert rodent"
+author: "Pat Dumandan"
+date: "2/27/2021"
+output: html_document
+---
+**Introduction**    
+The impacts of recent climate change are largely implicated to shifts in biodiversity patterns (Bellard et al. 2012, Leadley et al. 2010). As such, identifying the mechanisms that underlie these links is often central to modern ecological research. Commonly, the abundance patterns of different species are correlated with various abiotic and biotic predictors (Grinnell 1917, Hutchinson 1957, MacArthur 1968). Several studies have also explored how phenology, or the timing of different life-history events (e.g., breeding, migration, dormancy) relate to environmental factors (Charmantier et al. 2008, Parmesan 2006). However, despite the recognition of the importance of abiotic factors in driving the onset and duration of phenological stages in the annual life cycle of different species, our knowledge of the effect of biotic context(e.g., competitive and mutualistic interactions) is limited.  
+
+The timing of key life history events for interacting species can have profound impacts on the community dynamics (Parmesan 2006). Biotic interactions are assumed to play a role in the origin and maintenance of species diversity (Bascompte 2007). The strength and distribution of different biotic interactions may impact network structures in ecological communities (Gaiarsa & Guimarães 2018). Temporal variation of species interactions creates dynamic processes that in turn, shape community structures (Harley 2003). Unfortunately, the role of biotic interactions and seasonality of life cycles, and vice versa, remains poorly understood (Varpe 2017).  
+
+Reproduction is an energetically costly activity for organisms. During this period in their annual life cycle, they are expected to employ a variety of ecological strategies to achieve reproductive success (Schwartz, 2003). In general, efforts of breeding individuals need to be optimized to ensure that they can exploit resources while avoiding unfavorable conditions (Bradshaw and Holzapfel 2007). Oftentimes, environmental variables that signal abundance of resources (e.g., photoperiod, temperature, precipitation; Denny et al. 2014) are used to cue reproductive timing. However, because of the inherent challenge in collecting data on species in wild populations, a comprehensive understanding of their reproductive phenology is often fragmentary. This is especially true for small mammals that are small-bodied and labor-intensive to monitor (McLean and Guralnick 2020).  
+
+Small mammals provide key ecosystem services as seed dispersers and prey items for larger carnivores (Fischer et al. 2017). Their community structure and dynamics are often linked to habitat features, precipitation, and primary productivity (McLean and Guralnick 2020), which can become increasingly variable in future climate change scenarios (Bellard et al. 2012). Moreover, interspecific competition is often considered an important determinant of habitat use among small mammals (Grant 1978, Maitz and Dickman 2001). As such, determining how the timing of their life history traits relate to abiotic and biotic factors (i.e., competition) can help us better understand the extent of the impacts of climate change on wildlife populations. 
+
+Models that are used to predict biodiversity patterns in future climate change scenarios are often built based on an understanding of the ecological dynamics in a given context. These are then used to predict the state of the system in different climate regimes or landscape layouts (Thuillier et al. 2013). However, these models rarely account for various biotic interactions, such as competition (Araujo and Lauto 2007). For example, the presence or absence of a dominant competitor in a system can reduce the reproductive output of the inferior competitor (e.g., reduced conception rate, higher abortion rate; Eccard and Ylonen 2003), and consequently alter its population structure. This can then have repercussions to the species' response to other environmental variables. Thus, estimating the effects of biotic interactions such as competition can provide us with a more accurate representation of how species should fare in different ecological contexts.
+
+Here, we characterized the context-dependent breeding phenology of male and female Bailey’s pocket mice (*Chaetodipus baileyi*; hereafter referred to as “PB”) that were monitored in a long-term project site near Portal, Arizona since the mid-1990s. Specifically, we determined the intensity of the reproductive phenophase (i.e., period in the annual life cycle of species when reproductive characteristics are exhibited; Denny et al. 2014), and assessed the relationship between the probabilities of breeding with primary productivity (i.e., normalized difference vegetation index (NDVI)) in different biotic conditions (i.e., presence or absence of dominant competitors). This allowed us to explore concepts on the extent and potential drivers of phenological plasticity in wild populations.  
+
+**Methods**  
+
+*Data Curation and Manipulation*  
+
+We assembled a dataset on the observed abundance of individual PBs in Portal, Arizona that were exhibiting reproductive characteristics. We used the functionalities of the ‘portalr’ package (Yenni et al. 2019) to obtain partially cleaned individual-level data (i.e., removal of data with bad tags, periods, etc.). From this cleaned dataset, we created subsets for each type of plot (control and exclosure) and sex (male and female). For our analysis, we assigned individuals as reproductive males for those that had testes described to be scrotal (descended), recently scrotal, or had minor signs of scrotal testes. We identified reproductive females as those that were described to be pregnant (after palpating the belly), with either red and/or enlarged nipples, and those with swollen and/or plugged vaginas. To limit the introduction of biases in our dataset through the inclusion of juveniles, we identified a minimum threshold of the body mass for the breeding individuals for each species and sex (McLean and Guralnick 2020). Then, we filtered out individuals that had a body mass below the threshold for each group. Finally, we calculated the monthly proportion of breeding individuals for each species and sex by dividing the number of reproductive individuals observed by the total number of individuals for each species and sex in each plot type in each year.  
+
+*Data Analysis*    
+
+*Phenology model*- We used a generalized additive modelling (GAM) approach to characterize the breeding phenology of PBs in different biotic contexts. Additive models are useful in describing non-linear relationships between response variables and predictors through the incorporation of smooth functions (Wood 2006). Here, we fitted a model with the form:  
+
+$$ 
+ Y_{ij} \sim Binomial (N_{ij}, p_{ij})           
+ \text       {                                 (Eqn.1)                 } 
+$$  
+
+
+$$
+logistic (P_{ij}) = \frac {exp(\alpha) + f_1 * (month)+f_2 * (NDVI)+ f_3 * (year))}{1 + (exp(\alpha) + f_1 * (month)+ f_2 * (NDVI)+ f_3 * (year))}
+\text       {                                    (Eqn.2)                 }
+$$ 
+
+In Eqn. 1, \(Y_i\) is the proportion of breeding individuals at time point i, which follows a binomial distribution with the parameters N (i.e., total number of males) and p (i.e., proportion of breeding males). \(p_i\) is modelled as a logistic function of α, the population-level intercept, and \(f_1\) (month), the smooth function for the covariate month (Eqn. 2), which was parameterized using cubic cyclic regression splines (Pederson et al. 2019), \(f_2\) NDVI, the smooth function for the covariate NDVI, and \(f_3\) (year), the smooth function of the covariate year, parameterized using Gaussian process smooths (Wood 2006). To facilitate interpretation of the results, we standardized all predictors by centering each value on the mean and dividing them by two standard deviations (Gelman 2008). We implemented the model using a restricted maximum likelihood (REML) approach using the ‘mgcv’ package ver 1.8-31 (Wood 2011) in R ver 3.6.2 (R Core Team 2019).
+
+
+**Results**
+
+```{r include=FALSE}
+require(dplyr)
+require(portalr)
+require(tidyr)
+require(ggplot2)
+require(rstan)
+require(mgcv)
+require(brms)
+require(rstanarm)
+require(gamm4)
+
+options(mc.cores = parallel::detectCores())
+
+tot_dat=read.csv("./reconfigured_data/raw_cleaned/reprod_propn_male.csv")
+
+PB_dat_M=tot_dat%>%filter(species=="PB", !(treatment=="spectabs"))
+PB_dat_M[is.na(PB_dat_M)] <- 0 #set non-detects to 0
+PB_dat_M$trt<-ifelse(PB_dat_M$treatment=="control", 0, 1) 
+PB_dat_M$years=(PB_dat_M$year-mean(PB_dat_M$year))/(2*sd(PB_dat_M$year)) #standardize year
+PB_dat_M$months = (PB_dat_M$month - mean(PB_dat_M$month))/(2 *sd(PB_dat_M$month))
+PB_dat_M$mon_cos= cos(2*pi*(PB_dat_M$month/12))
+PB_dat_M$mon_sin= sin(2*pi*(PB_dat_M$month/12))
+PB_dat_M$spcode=as.integer(PB_dat_M$species)
+
+PB_gam_ex=PB_dat_M%>%
+  filter(treatment=="exclosure")
+``` 
+**Proportion of breeding individuals**  
+From 1996 to 2019, there were 3,529 records of male PBs in both treatment plots, of which 12% (n=434) were of individuals displaying reproductive characteristics. On average, the monthly proportion of breeding males was marginally higher in exclosure than in control plots (14% vs 13%). Moreover, most observations of males exhibiting reproductive characteristics were recorded between the months of February to May in both types of treatment plots (Fig.1). The bulk of observations on reproductive individuals was recorded in the late 1990s to mid-2000s (Fig. 2).
+```{r echo=FALSE}
+ggplot(PB_dat_M, aes(y=proportion, x=month, col=treatment)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PB males")+
+  scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+                                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```  
+
+**Fig.1. Reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) in control and exclosure plots from 1996 to 2019.**
+
+```{r echo=FALSE}
+ggplot(PB_dat_M, aes(y=proportion, x=year, col=treatment)) +
+  geom_point() +
+  ylab("P(breeding)")+
+  stat_smooth(method = 'gam', formula = y ~ s(x))+
+  ggtitle("PB males")+
+  #scale_x_discrete(name="month", limits=c("Jan", "Feb", "Mar", "Apr","May", "Jun",
+  #                                        "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))+
+  theme(axis.text.x= element_text(angle = 90, vjust=0.5, hjust=1),
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+```  
+
+**Fig. 2. Long-term trends of the proportion of Bailey's pocket mouse (*C. baileyi*) exhibiting reproductive characteristics in both control and exclosure plots, from 1996 to 2019.**
+```{r include= FALSE}
+
+PB_gam_con=PB_dat_M%>%
+  filter(treatment=="control")%>%
+  mutate(date=lubridate::as_date(paste(month, "15", year, sep="-"), format="%m-%d-%Y"))
+```  
+
+ 
+***P*(breeding) males in each type of treatment plot**  
+
+The peak of the reproductive phenology of PBs in control plots was around March to April (Fig.3; i.e., the fitted trend line intersects with the zero line in Fig. 4). We also documented three periods of significant change in the reproductive phenophases in the control plots (Fig. 4). Specifically, we found significantly positive rates of change in the winter months (one in January to February and the other in December) and negative rates of change during the summer months (May to July). Across all years, a significant decreasing trend in the proportion of breeding males was observed around 2005 to 2007.   
+
+The peak period in the reproductive phenology of PBs in exclosure plots was roughly around the same months as in control plots (March to April; Fig. 5, 6). As in control plots, we documented three periods of significant change in the annual reproductive cycle, with significant positive rates of change occurring in December to February. However, unlike in control plots, the proportion of breeding males exhibited significant decreasing trends in May followed by a non-significant seasonal trend (Fig. 7). Moreover, in the exclosure plots, the model identified two periods of significant change. Prior to the 2000s, a significant positive rate of change was detected, while from around 2003 to 2007, there was significant negative rate of change.  
+
+
+```{r echo=FALSE}
+m1=gam(proportion~s(month, bs="cc", k=12)+s(year), data=PB_gam_con, method = 'REML', weights = abundance, family = binomial)
+m2=gam(proportion~s(month, bs="cc", k=12)+years, data=PB_gam_con, method = 'REML', weights = abundance, family = binomial)
+m3=gam(proportion~te(years, months),data=PB_gam_con, method = 'REML', weights = abundance, family = binomial)
+#m4=stan_gamm4(proportion~s(month,k=12, bs="cc") +s(years, bs="gp"), data=PB_gam_con, weights = PB_gam_con$abundance, family = binomial, chains=4, iter=300)
+
+plot(m1)
+
+#AIC(m4$lme, m1, m2, m3)
+#AIC(m1, m2, m3)
+
+```  
+
+**Fig.3. Patterns of the a) seasonal and b) trend terms in the generalized additive model (GAM) of the reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) in control plots, from 1996 to 2019.**  
+
+*Note: I am still figuring out a way to overlay Fig. 3 and 4 and the raw data so it's a more comprehensive visualization*
+
+```{r warning=FALSE, message= FALSE, echo=FALSE}
+tmpf <- tempfile()
+download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",tmpf)
+source(tmpf)
+
+want=seq(1, nrow(PB_gam_con), length.out = 200)
+pdat=with(PB_gam_con, data.frame(year=year[want], month=month[want]))
+p2=predict(m1, newdata=pdat, type="terms", se.fit = TRUE)
+pdat=transform(pdat, p2=p2$fit[,1], se2=p2$se.fit[,1]) #p2=fit, se2=std.error
+
+df.res=df.residual(m1)
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat=transform(pdat, upper=p2+(crit.t*se2), lower=p2-(crit.t*se2))
+
+Term <- "month"
+m1.d <- Deriv(m1)
+m1.dci <- confint(m1.d, term = Term)
+m1.dsig <- signifD(pdat$p2, d = m1.d[[Term]]$deriv,
+                     +m1.dci[[Term]]$upper, m1.dci[[Term]]$lower)
+
+plot.Deriv(m1.d, sizer =T)
+```  
+
+**Fig. 4. Intra- and inter-annual variations in the periods of change (first derivatives) in the reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) recorded in control plots from 1996 to 2019. Blue and red lines indicate periods of statistically significant positive and negative trends, respectively.** 
+ 
+
+```{r include= FALSE}
+
+PB_gam_ex=PB_dat_M%>%
+  filter(treatment=="exclosure")%>%
+  mutate(date=lubridate::as_date(paste(month, "15", year, sep="-"), format="%m-%d-%Y"))
+```  
+
+```{r echo=FALSE}
+m4=gam(proportion~s(month, bs="cc", k=12)+s(year), data=PB_gam_ex, method = 'REML', weights = abundance, family = binomial)
+m5=gam(proportion~s(month, bs="cc", k=12)+years, data=PB_gam_ex, method = 'REML', weights = abundance, family = binomial)
+m6=gam(proportion~te(years, months),data=PB_gam_ex, method = 'REML', weights = abundance, family = binomial)
+
+plot(m4)
+
+#AIC(m4$lme, m1, m2, m3)
+#AIC(m1, m2, m3)
+
+```    
+
+**Fig.5. Patterns of the a) seasonal and b) trend terms in the generalized additive model (GAM) of the reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) in exclosure plots, from 1996 to 2019.**  
+
+```{r warning=FALSE, message= FALSE, echo=FALSE}
+want=seq(1, nrow(PB_gam_ex), length.out = 200)
+pdat2=with(PB_gam_ex, data.frame(year=year[want], month=month[want]))
+p3=predict(m4, newdata=pdat2, type="terms", se.fit = TRUE)
+pdat2=transform(pdat2, p3=p3$fit[,1], se3=p3$se.fit[,1]) #p2=fit, se2=std.error
+
+df.res=df.residual(m4)
+crit.t=qt(0.025, df.res, lower.tail = F)
+pdat2=transform(pdat2, upper=p3+(crit.t*se3), lower=p3-(crit.t*se3))
+
+Term <- "month"
+m4.d <- Deriv(m4)
+m4.dci <- confint(m4.d, term = Term)
+m4.dsig <- signifD(pdat2$p3, d = m4.d[[Term]]$deriv,
+                     +m1.dci[[Term]]$upper, m4.dci[[Term]]$lower)
+
+plot.Deriv(m4.d, sizer =T)
+```   
+
+**Fig. 6. Intra- and inter-annual variations in the periods of change (first derivatives) in the reproductive phenophase of Bailey's pocket mouse (*C. baileyi*) recorded in exclosure plots from 1996 to 2019. Blue and red lines indicate periods of statistically significant positive and negative trends, respectively.**     
+
+#### **To discuss with Morgan**  
+* i'm interested in adding an abiotic factor into the model to see how the proportion of breeding individuals relate to environmental variation and if that association also differs in the presence/absence of dominant competitors. would that be worthwhile to explore? if yes, what variables should i throw in?  
+* i was thinking of scaling down my focus for this project. instead of building a community-level phenology model, I was thinking of just building population-specific and sex-specific ones but choose 2 species that are potentially influenced differently by the presence/absence of k-rats. would that be reasonable? i was thinking more about how I want the model to be simple enough so that, as a side project related to portal forecasting, I can tweak it to make predictions of the breeding proportions for each month. or something. 
