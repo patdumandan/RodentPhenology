@@ -8,7 +8,7 @@
 
 #### Folders:  
 
-1. exploratory: all preliminary analyses codes (unorganized and poorly annotated)  
+1. analyses: all files related to exploratory/preliminary analyses (unorganized and poorly annotated)  
 2. figures: some of the manuscript figures  
 3. RScripts: all final data cleaning and data analyses scripts  
 4. ReproData: cleaned reproductive data used in building models  
