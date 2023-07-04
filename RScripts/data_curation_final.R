@@ -463,6 +463,7 @@ all_bmass2=left_join(all_bmass13,PB_bmass, by=c("month", "year", "treatment"))
 all_bmass3=left_join(all_bmass2,PP_bmass, by=c("month", "year", "treatment"))%>%
   mutate(DIPO_bmass=rowSums(.[26:28]))%>%drop_na()
 
+#standardize data####
 all_bmass3$years=(all_bmass3$year-mean(all_bmass3$year))/(2*sd(all_bmass3$year))
 all_bmass3$ndvis=(all_bmass3$ndvi-mean(all_bmass3$ndvi))/(sd(all_bmass3$ndvi))
 all_bmass3$ndvis_lag=(all_bmass3$lag_ndvi-mean(all_bmass3$lag_ndvi))/(sd(all_bmass3$lag_ndvi))

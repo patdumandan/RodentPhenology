@@ -40,25 +40,25 @@ ppm_plot=ppm_plot%>%mutate(otrt=ordered(treatment, levels=c("control", "exclosur
 pbf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
                  otrt, data=pbf_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(pbf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n",main="female", ylab="s(difference):k-rat inaccessible")
+plot(pbf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n",main="female", ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 pbm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
                  otrt, data=pbm_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(pbm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", main="male",ylab="s(difference):k-rat inaccessible")
+plot(pbm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", main="male",ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 #PP models##
 
 ppf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppf_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(ppf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):k-rat inaccessible")
+plot(ppf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 ppm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppm_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(ppm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):k-rat inaccessible")
+plot(ppm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 summary(pbf3)

@@ -16,25 +16,25 @@ library(lattice)
 pbf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
                  otrt, data=pbf_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(pbf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n",main="female", ylab="s(difference):k-rat inaccessible")
+plot(pbf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n",main="female", ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 pbm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
                  otrt, data=pbm_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(pbm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", main="male",ylab="s(difference):k-rat inaccessible")
+plot(pbm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", main="male",ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 #PP models####
 
 ppf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppf_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(ppf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):k-rat inaccessible")
+plot(ppf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 ppm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppm_plot, method = 'REML', weights = abundance, family = binomial)
 
-plot(ppm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):k-rat inaccessible")
+plot(ppm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
 axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
 
 #FIGURE 2####
@@ -87,45 +87,43 @@ rect(xleft=7, ybottom=-5, ytop=5, xright=7.5, col = rgb(0.5,0,0, 1/4))#control d
 #FIGURE 3####
 
 #PB ####
-pbf=dwplot(list(pbf_con3,pbf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
-                                                 "ppts_warm","ppts_lag_warm", 
-                                                 "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
-  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
-                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
-                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
-                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+pbf=dwplot(list(pbf_con3,pbf_ex3),vars_order = c("ndvis", "temps_mean", 
+                                                 "ppts_warm",
+                                                 "ppts_cool",  "pbs","pps", "dipos"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)",
+                       ppts_cool= "cool precipitation (lag 0)",
+                       pbs="C. baileyi biomass",pps= "C. penicillatus biomass", dipos= "Dipodomys spp. biomass"))+
   scale_color_manual(name = "Treatment",
                      values=c("skyblue", "green"),
-                     labels = c("k-rat accessible","k-rat inaccessible"))+
+                     labels = c("Dipodomys accessible","Dipodomys inaccessible"))+
   scale_fill_manual(name = "Treatment",
                     values=c("skyblue", "green"),
-                    labels = c("k-rat accessible","k-rat inaccessible"))+
+                    labels = c("Dipodomys accessible","Dipodomys inaccessible"))+
   ggtitle("female")+#geom_label(label="A", x=3, y=11, label.size=NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
-pbm=dwplot(list(pbm_con3,pbm_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
-                                                 "ppts_warm","ppts_lag_warm", 
-                                                 "ppts_cool",  "ppts_lag_cool", "pbs","pps", "dipos"))%>%
-  relabel_predictors(c(ndvis="NDVI (lag 0)",ndvis_lag="NDVI (lag 1)",
-                       temps_mean="mean temperature (lag 0)", temps_lag_mean="mean temperature(lag 1)",
-                       ppts_warm= "warm precipitation (lag 0)", ppts_lag_warm=" warm precipitation (lag 1)",
-                       ppts_cool= "cool precipitation (lag 0)", ppts_lag_cool= "cool precipitation (lag 1)",
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+pbm=dwplot(list(pbm_con3,pbm_ex3),vars_order = c("ndvis", "temps_mean", 
+                                                 "ppts_warm",
+                                                 "ppts_cool",  "pbs","pps", "dipos"))%>%
+  relabel_predictors(c(ndvis="NDVI (lag 0)",
+                       temps_mean="mean temperature (lag 0)", 
+                       ppts_warm= "warm precipitation (lag 0)",
+                       ppts_cool= "cool precipitation (lag 0)",
+                       pbs="C. baileyi biomass",pps= "C. penicillatus biomass", dipos= "Dipodomys spp. biomass"))+
   scale_color_manual(name = "Treatment",
                      values=c("skyblue", "green"),
-                     labels = c("k-rat accessible","k-rat inaccessible"))+
+                     labels = c("Dipodomys accessible","Dipodomys inaccessible"))+
   scale_fill_manual(name = "Treatment",
                     values=c("skyblue", "green"),
-                    labels = c("k-rat accessible","k-rat inaccessible"))+
-  ggtitle("male")+#geom_label(label="B", x=3, y=11, label.size=NA)+
+                    labels = c("Dipodomys accessible","Dipodomys inaccessible"))+
+  ggtitle("male")+#geom_label(label="A", x=3, y=11, label.size=NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
-
 
 pb1=ggarrange(pbf, pbm + theme(axis.text.y = element_blank()),widths = c(0.35, 0.25), nrow=1, common.legend = T, legend="bottom",
               font.label = list(size=12))
 pb1
-annotate_figure(pb1, top=text_grob("Bailey's pocket mouse", face="bold"))
 
 #PP####
 ppf=dwplot(list(ppf_con3,ppf_ex3),vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
@@ -200,83 +198,77 @@ rect(xleft=1, ybottom=-5, ytop=5, xright=2, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=7, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
 
 #FIGURE 5####
-#control####
-plot_con1=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+#PB plots####
+plot_con11=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
                                                                                          "ppts_warm",
-                                                                                         "ppts_cool", "pbs","pps", "dipos"))%>%
+                                                                                         "ppts_cool"))%>%
   relabel_predictors(c(ndvis="NDVI (lag 0)",
                        temps_mean="mean temperature (lag 0)", 
                        ppts_warm= "warm precipitation (lag 0)", 
-                       ppts_cool= "cool precipitation (lag 0)",
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+                       ppts_cool= "cool precipitation (lag 0)"))+
   scale_color_manual(name = "Species",
-                     values=c("sky blue", "green", "orange"),
-                     labels = c("kangaroo rats","Bailey's pocket mice", "desert pocket mice"))+
+                     values=c("skyblue", "green", "orange"),
+                     labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
   scale_fill_manual(name = "Species",
-                    values=c("sky blue", "green","orange"),
-                    labels = c("kangaroo rats","Bailey's pocket mice", "desert pocket mice"))+
-  ggtitle("female")+geom_label(label="A", x=4, y=11, label.size=NA)+
+                    values=c("skyblue", "green","orange"),
+                    labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
+  ggtitle("female")+#geom_label(label="A", x=4, y=8, label.size=NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 
-plot_con2=dwplot(list(dipom_con3,pbm_con3, ppm_con3),style="distribution",vars_order = c("ndvis", "temps_mean",
-                                                                                         "ppts_warm", 
-                                                                                         "ppts_cool", "pbs","pps", "dipos"))%>%
+plot_con12=dwplot(list(dipom_con3,pbm_con3, pbm_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
   relabel_predictors(c(ndvis="NDVI (lag 0)",
                        temps_mean="mean temperature (lag 0)", 
                        ppts_warm= "warm precipitation (lag 0)", 
-                       ppts_cool= "cool precipitation (lag 0)", 
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+                       ppts_cool= "cool precipitation (lag 0)"))+
   scale_color_manual(name = "Species",
-                     values=c("sky blue", "green", "orange"),
-                     labels = c("kangaroo rats","Bailey's pocket mice", "desert pocket mice"))+
+                     values=c("skyblue", "green", "orange"),
+                     labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
   scale_fill_manual(name = "Species",
-                    values=c("sky blue", "green","orange"),
-                    labels = c("kangaroo rats","Bailey's pocket mice", "desert pocket mice"))+
-  ggtitle("male")+ geom_label(label="B", x=2, y=13, label.size=NA)+
-  geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+                    values=c("skyblue", "green","orange"),
+                    labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
+  ggtitle("male")+#geom_label(label="A", x=4, y=8, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
-plot_con=ggarrange(plot_con1, plot_con2+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
+plot_con=ggarrange(plot_con11, plot_con12+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
                    font.label = list(size=12))
-annotate_figure(plot_con, top=text_grob("control", face="bold"))
-#exclosure####
+annotate_figure(plot_con, top=text_grob("k-rat inaccessible", face="bold"))
 
-plot_ex1=dwplot(list(pbf_ex3, ppf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
-                                                                           "ppts_warm",
-                                                                           "ppts_cool", "pbs","pps", "dipos"))%>%
+#PP plots####
+plot_con21=dwplot(list(dipof_con3,ppf_con3, ppf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
   relabel_predictors(c(ndvis="NDVI (lag 0)",
                        temps_mean="mean temperature (lag 0)", 
                        ppts_warm= "warm precipitation (lag 0)", 
-                       ppts_cool= "cool precipitation (lag 0)",
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+                       ppts_cool= "cool precipitation (lag 0)"))+
   scale_color_manual(name = "Species",
-                     values=c( "green", "orange"),
-                     labels = c("Bailey's pocket mice", "desert pocket mice"))+
+                     values=c("skyblue", "green", "orange"),
+                     labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
   scale_fill_manual(name = "Species",
-                    values=c( "green","orange"),
-                    labels = c("Bailey's pocket mice", "desert pocket mice"))+
-  ggtitle("female")+geom_label(label="C", x=4, y=9.5, label.size=NA)+
+                    values=c("skyblue", "green","orange"),
+                    labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
+  #ggtitle("female")+#geom_label(label="A", x=4, y=8, label.size=NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 
-plot_ex2=dwplot(list(pbm_ex3, ppm_ex3),style="distribution",vars_order = c("ndvis", "temps_mean",
-                                                                             "ppts_warm", 
-                                                                             "ppts_cool", "pbs","pps", "dipos"))%>%
+plot_con22=dwplot(list(dipom_con3,ppm_con3, ppm_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
+                                                                                         "ppts_warm",
+                                                                                         "ppts_cool"))%>%
   relabel_predictors(c(ndvis="NDVI (lag 0)",
                        temps_mean="mean temperature (lag 0)", 
                        ppts_warm= "warm precipitation (lag 0)", 
-                       ppts_cool= "cool precipitation (lag 0)", 
-                       pbs="Bailey's pocket mouse biomass",pps= "desert pocket mouse biomass", dipos= "Dipodomys sp. biomass"))+
+                       ppts_cool= "cool precipitation (lag 0)"))+
   scale_color_manual(name = "Species",
-                     values=c( "green", "orange"),
-                     labels = c("Bailey's pocket mice", "desert pocket mice"))+
+                     values=c("skyblue", "green", "orange"),
+                     labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
   scale_fill_manual(name = "Species",
-                    values=c( "green","orange"),
-                    labels = c("Bailey's pocket mice", "desert pocket mice"))+
-  ggtitle("male")+ geom_label(label="D", x=2, y=9, label.size=NA)+
-  geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
+                    values=c("skyblue", "green","orange"),
+                    labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
+  #ggtitle("male")+#geom_label(label="A", x=4, y=8, label.size=NA)+
+  theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
-plot_ex=ggarrange(plot_ex1, plot_ex2+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
-                  font.label = list(size=12))
-annotate_figure(plot_ex, top=text_grob("k-rat inaccessible", face="bold"))
-
+plot_con2=ggarrange(plot_con21, plot_con22+theme(axis.text.y = element_blank()),widths = c(0.35, 0.20), nrow=1, common.legend = T, legend="bottom",
+                    font.label = list(size=12))

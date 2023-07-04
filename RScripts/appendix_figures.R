@@ -94,6 +94,34 @@ annotate_figure(p1, top = text_grob("C.penicillatus",
                                     face = "bold", size = 14))
 #FIG 2####
 
+#PB models####
+
+pbf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
+                 otrt, data=pbf_plot, method = 'REML', weights = abundance, family = binomial)
+
+plot(pbf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n",main="female", ylab="s(difference):Dipodomys inaccessible")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+
+pbm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
+                 otrt, data=pbm_plot, method = 'REML', weights = abundance, family = binomial)
+
+plot(pbm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", main="male",ylab="s(difference):Dipodomys inaccessible")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+
+#PP models####
+
+ppf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppf_plot, method = 'REML', weights = abundance, family = binomial)
+
+plot(ppf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+
+ppm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppm_plot, method = 'REML', weights = abundance, family = binomial)
+
+plot(ppm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
+axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+
+#FIG 3####
+
 #PP###
 ppd_f_con=dwplot(list(dipof_con3,ppf_con3),style="distribution",vars_order = c("ndvis","ndvis_lag", "temps_mean","temps_lag_mean", 
                                                                                "ppts_warm","ppts_lag_warm", 
@@ -249,7 +277,7 @@ dipo3=dwplot(list(dipof_con3, dipom_con3),vars_order = c("ndvis","ndvis_lag", "t
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
 #Fig 3 alts###
-#1####
+#1###
 #PB###
 pbf=dwplot(list(pbf_con3,pbf_ex3),vars_order = c("ndvis", "temps_mean", 
                                                  "ppts_warm",
@@ -331,7 +359,7 @@ pp1=ggarrange(ppf, ppm + theme(axis.text.y = element_blank()),widths = c(0.35, 0
 pp1
 annotate_figure(pp1, top=text_grob("desert pocket mouse", face="bold"))
 
-#2####
+#2###
 
 plot_ex1=dwplot(list(pbf_ex3, ppf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
                                                                            "ppts_warm",
@@ -434,11 +462,11 @@ plot_con11=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_o
                        ppts_warm= "warm precipitation (lag 0)", 
                        ppts_cool= "cool precipitation (lag 0)"))+
   scale_color_manual(name = "Species",
-                     values=c("sky blue", "green", "orange"),
-                     labels = c("kangaroo rats","control", "k-rat inaccessible"))+
+                     values=c("skyblue", "green", "orange"),
+                     labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
   scale_fill_manual(name = "Species",
-                    values=c("sky blue", "green","orange"),
-                    labels = c("kangaroo rats","control", "k-rat inaccessible"))+
+                    values=c("skyblue", "green","orange"),
+                    labels = c("kangaroo rats","Dipodomys accessible", "Dipodomys inaccessible"))+
   ggtitle("female")+#geom_label(label="A", x=4, y=8, label.size=NA)+
   theme_classic()+geom_vline(xintercept=0, linetype="dotted")+theme_pubr(base_size = 10)
 
