@@ -11,34 +11,6 @@ library(lattice)
 
 #FIGURE 1####
 
-#PB models####
-
-pbf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
-                 otrt, data=pbf_plot, method = 'REML', weights = abundance, family = binomial)
-
-plot(pbf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n",main="female", ylab="s(difference):Dipodomys inaccessible")
-axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
-
-pbm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+s(year)+
-                 otrt, data=pbm_plot, method = 'REML', weights = abundance, family = binomial)
-
-plot(pbm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", main="male",ylab="s(difference):Dipodomys inaccessible")
-axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
-
-#PP models####
-
-ppf3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppf_plot, method = 'REML', weights = abundance, family = binomial)
-
-plot(ppf3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
-axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
-
-ppm3=mgcv::gam(proportion~s(month,bs="cc")+s(month,bs="cc", by= otrt)+otrt, data=ppm_plot, method = 'REML', weights = abundance, family = binomial)
-
-plot(ppm3, shade = TRUE, scale = 0, seWithMean = TRUE, select=2, xaxt="n", ylab="s(difference):Dipodomys inaccessible")
-axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
-
-#FIGURE 2####
-
 #DIPO female control####
 plot.gam(dipof_con3, select=1, xaxt="n")
 title("female")
@@ -84,7 +56,7 @@ axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Au
 rect(xleft=1, ybottom=-5, ytop=5, xright=3, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=7, ybottom=-5, ytop=5, xright=7.5, col = rgb(0.5,0,0, 1/4))#control decr
 
-#FIGURE 3####
+#FIGURE 2####
 
 #PB ####
 pbf=dwplot(list(pbf_con3,pbf_ex3),vars_order = c("ndvis", "temps_mean", 
@@ -165,7 +137,7 @@ pp1=ggarrange(ppf, ppm + theme(axis.text.y = element_blank()),widths = c(0.35, 0
 pp1
 annotate_figure(pp1, top=text_grob("desert pocket mouse", face="bold"))
 
-#FIGURE 4####
+#FIGURE 3####
 
 #PP female control####
 
@@ -197,7 +169,7 @@ axis(1, at=1:12, labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Au
 rect(xleft=1, ybottom=-5, ytop=5, xright=2, col = rgb(0,0,0.5, 1/4)) #control
 rect(xleft=7, ybottom=-5, ytop=5, xright=8, col = rgb(0.5,0,0, 1/4))#control decr
 
-#FIGURE 5####
+#FIGURE 4####
 #PB plots####
 plot_con11=dwplot(list(dipof_con3,pbf_con3, pbf_ex3),style="distribution",vars_order = c("ndvis", "temps_mean", 
                                                                                          "ppts_warm",
