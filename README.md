@@ -1,5 +1,7 @@
-# Reproductive Phenology
-## PhD project 1: reproductive phenology of rodents in Portal
+# repository for the Portal Rodent Phenology Project
+[![DOI](https://zenodo.org/badge/315314816.svg)](https://zenodo.org/doi/10.5281/zenodo.7327502)
+
+[Paper](https://esajournals.onlinelibrary.wiley.com/doi/epdf/10.1002/ecy.4160) now published in Ecology titled: Shifts in competitive structures drive variation in species’ phenology published in Ecology 
 
 #### Goals:  
 
